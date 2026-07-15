@@ -6,6 +6,8 @@ export default function ProdukPage() {
   const [rows, setRows] = useState<Produk[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showDetail, setShowDetail] = useState(false);
+  const [viewProduk, setViewProduk] = useState<Produk | null>(null);
   const [edit, setEdit] = useState<Produk | null>(null);
   const [form, setForm] = useState({ nama: "", harga: "", kos: "", stok: "" });
 
@@ -24,6 +26,11 @@ export default function ProdukPage() {
     else setLoading(false);
   }, []);
 
+  function openDetail(p: Produk) {
+    setViewProduk(p);
+    setShowDetail(true);
+  }
+
   function openAdd() {
     setEdit(null);
     setForm({ nama: "", harga: "", kos: "", stok: "" });
@@ -31,6 +38,7 @@ export default function ProdukPage() {
   }
 
   function openEdit(p: Produk) {
+    setShowDetail(false);
     setEdit(p);
     setForm({
       nama: p.nama,
@@ -59,6 +67,7 @@ export default function ProdukPage() {
 
   async function hapus(id: string) {
     if (!confirm("Padam produk ini?")) return;
+    setShowDetail(false);
     await supabase.from("produk").delete().eq("id", id);
     load();
   }
@@ -66,6 +75,12 @@ export default function ProdukPage() {
   const fmt = (n: number) =>
     "RM " + n.toLocaleString("ms-MY", { minimumFractionDigits: 2 });
   const untungUnit = (p: Produk) => Number(p.harga) - Number(p.kos);
+
+  // margin live semasa isi borang tambah/edit produk
+  const formHarga = Number(form.harga) || 0;
+  const formKos = Number(form.kos) || 0;
+  const formUntung = formHarga - formKos;
+  const formMarginPct = formHarga > 0 ? (formUntung / formHarga) * 100 : 0;
 
   return (
     <div>
@@ -88,37 +103,61 @@ export default function ProdukPage() {
       ) : rows.length === 0 ? (
         <div className="empty">Tiada produk lagi. Klik “Tambah Produk”.</div>
       ) : (
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Nama</th>
-              <th>Harga Jual</th>
-              <th>Kos Beli</th>
-              <th>Untung/Unit</th>
-              <th>Stok</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((p) => (
-              <tr key={p.id}>
-                <td data-label="Nama">{p.nama}</td>
-                <td data-label="Harga Jual">{fmt(Number(p.harga))}</td>
-                <td data-label="Kos Beli">{fmt(Number(p.kos))}</td>
-                <td data-label="Untung/Unit" style={{ color: "var(--green)" }}>+{fmt(untungUnit(p))}</td>
-                <td data-label="Stok">{p.stok}</td>
-                <td className="actions-cell" style={{ textAlign: "right", whiteSpace: "nowrap" }}>
-                  <button className="btn secondary" onClick={() => openEdit(p)}>
-                    Edit
-                  </button>{" "}
-                  <button className="btn danger" onClick={() => hapus(p.id)}>
-                    Padam
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className="simple-list">
+          {rows.map((p) => (
+            <button key={p.id} className="list-row" onClick={() => openDetail(p)}>
+              <div className="list-row-main">
+                <span className="list-row-title">{p.nama}</span>
+                <span className="list-row-sub">Stok: {p.stok}</span>
+              </div>
+              <div className="list-row-value">{fmt(Number(p.harga))}</div>
+              <span className="list-row-chevron">›</span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {showDetail && viewProduk && (
+        <div className="modal-backdrop" onClick={() => setShowDetail(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h3>{viewProduk.nama}</h3>
+            <div className="detail-grid">
+              <div className="detail-row">
+                <span className="muted">Harga Jual</span>
+                <span>{fmt(Number(viewProduk.harga))}</span>
+              </div>
+              <div className="detail-row">
+                <span className="muted">Kos Produk</span>
+                <span>{fmt(Number(viewProduk.kos))}</span>
+              </div>
+              <div className="detail-row">
+                <span className="muted">Untung/Unit</span>
+                <span style={{ color: "var(--green)", fontWeight: 700 }}>
+                  +{fmt(untungUnit(viewProduk))} (
+                  {Number(viewProduk.harga) > 0
+                    ? ((untungUnit(viewProduk) / Number(viewProduk.harga)) * 100).toFixed(1)
+                    : "0.0"}
+                  %)
+                </span>
+              </div>
+              <div className="detail-row">
+                <span className="muted">Stok</span>
+                <span>{viewProduk.stok}</span>
+              </div>
+            </div>
+            <div className="modal-actions">
+              <button className="btn secondary" onClick={() => setShowDetail(false)}>
+                Tutup
+              </button>
+              <button className="btn secondary" onClick={() => openEdit(viewProduk)}>
+                Edit
+              </button>
+              <button className="btn danger" onClick={() => hapus(viewProduk.id)}>
+                Padam
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {showModal && (
@@ -142,7 +181,7 @@ export default function ProdukPage() {
               />
             </div>
             <div className="field">
-              <label>Kos Beli (RM)</label>
+              <label>Kos Produk (RM)</label>
               <input
                 type="number"
                 step="0.01"
@@ -150,6 +189,14 @@ export default function ProdukPage() {
                 onChange={(e) => setForm({ ...form, kos: e.target.value })}
               />
             </div>
+
+            <div className="margin-preview">
+              <span>Margin Untung</span>
+              <strong style={{ color: formUntung >= 0 ? "var(--green)" : "var(--red)" }}>
+                {fmt(formUntung)} ({formMarginPct.toFixed(1)}%)
+              </strong>
+            </div>
+
             <div className="field">
               <label>Stok</label>
               <input

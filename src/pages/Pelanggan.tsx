@@ -20,6 +20,10 @@ type EditOrderItem = {
   kos_satuan: number;
 };
 
+const BLANK_ITEMS: DraftItem[] = [
+  { produk_id: null, nama_produk: "", kuantiti: 1, harga_satuan: 0, kos_satuan: 0 },
+];
+
 export default function PelangganPage() {
   const [rows, setRows] = useState<Pelanggan[]>([]);
   const [produk, setProduk] = useState<Produk[]>([]);
@@ -39,9 +43,13 @@ export default function PelangganPage() {
   const [viewCust, setViewCust] = useState<Pelanggan | null>(null);
   const [form, setForm] = useState<{ nama: string; phone: string; email: string; lokasi: string | null }>({ nama: "", phone: "", email: "", lokasi: null });
 
-  const [items, setItems] = useState<DraftItem[]>([
-    { produk_id: null, nama_produk: "", kuantiti: 1, harga_satuan: 0, kos_satuan: 0 },
-  ]);
+  // carian pelanggan sedia ada
+  const [search, setSearch] = useState("");
+  const [searchResult, setSearchResult] = useState<Pelanggan | null>(null);
+  const [searchMsg, setSearchMsg] = useState<string | null>(null);
+  const [searchDup, setSearchDup] = useState(false);
+
+  const [items, setItems] = useState<DraftItem[]>(BLANK_ITEMS);
 
   async function load() {
     setLoading(true);
@@ -51,6 +59,18 @@ export default function PelangganPage() {
       .order("nama");
     if (!error && data) setRows(data as Pelanggan[]);
     setLoading(false);
+  }
+
+  async function refreshPesanan() {
+    const { data: pes } = await supabase.from("pesanan").select("*").order("tarikh", { ascending: false });
+    const { data: its } = await supabase.from("item_pesanan").select("*");
+    const itemMap = new Map<string, ItemPesanan[]>();
+    for (const it of (its ?? []) as ItemPesanan[]) {
+      const arr = itemMap.get(it.pesanan_id) ?? [];
+      arr.push(it);
+      itemMap.set(it.pesanan_id, arr);
+    }
+    setPesananAll(((pes ?? []) as Pesanan[]).map((p) => ({ ...p, pelanggan_nama: null, items: itemMap.get(p.id) ?? [] })));
   }
 
   useEffect(() => {
@@ -82,7 +102,6 @@ export default function PelangganPage() {
       );
       load();
 
-      // kira order per negeri
       const custNegeri = new Map<string, string | null>((custs ?? []).map((c: any) => [c.id, c.lokasi]));
       const byNegeri = new Map<string, { orders: number; jualan: number }>();
       for (const p of (pes ?? []) as Pesanan[]) {
@@ -104,10 +123,12 @@ export default function PelangganPage() {
   function openAdd() {
     setEdit(null);
     setForm({ nama: "", phone: "", email: "", lokasi: "" });
+    setItems(BLANK_ITEMS);
     setShowModal(true);
   }
 
   function openEdit(p: Pelanggan) {
+    setShowView(false);
     setEdit(p);
     setForm({
       nama: p.nama,
@@ -119,8 +140,9 @@ export default function PelangganPage() {
   }
 
   function openOrder(p: Pelanggan) {
+    setShowView(false);
     setOrderCust(p);
-    setItems([{ produk_id: null, nama_produk: "", kuantiti: 1, harga_satuan: 0, kos_satuan: 0 }]);
+    setItems(BLANK_ITEMS);
     setShowOrder(true);
   }
 
@@ -187,16 +209,7 @@ export default function PelangganPage() {
 
     setShowEditOrder(false);
     load();
-    // refresh pesananAll
-    const { data: pes } = await supabase.from("pesanan").select("*").order("tarikh", { ascending: false });
-    const { data: its } = await supabase.from("item_pesanan").select("*");
-    const itemMap = new Map<string, ItemPesanan[]>();
-    for (const it of (its ?? []) as ItemPesanan[]) {
-      const arr = itemMap.get(it.pesanan_id) ?? [];
-      arr.push(it);
-      itemMap.set(it.pesanan_id, arr);
-    }
-    setPesananAll(((pes ?? []) as Pesanan[]).map((p) => ({ ...p, pelanggan_nama: null, items: itemMap.get(p.id) ?? [] })));
+    await refreshPesanan();
   }
 
   async function deleteOrder(id: string) {
@@ -204,37 +217,7 @@ export default function PelangganPage() {
     await supabase.from("pesanan").delete().eq("id", id);
     setShowView(false);
     load();
-    const { data: pes } = await supabase.from("pesanan").select("*").order("tarikh", { ascending: false });
-    const { data: its } = await supabase.from("item_pesanan").select("*");
-    const itemMap = new Map<string, ItemPesanan[]>();
-    for (const it of (its ?? []) as ItemPesanan[]) {
-      const arr = itemMap.get(it.pesanan_id) ?? [];
-      arr.push(it);
-      itemMap.set(it.pesanan_id, arr);
-    }
-    setPesananAll(((pes ?? []) as Pesanan[]).map((p) => ({ ...p, pelanggan_nama: null, items: itemMap.get(p.id) ?? [] })));
-  }
-
-  async function save() {
-    const payload = {
-      nama: form.nama,
-      phone: form.phone || null,
-      email: form.email || null,
-      lokasi: form.lokasi || null,
-    };
-    if (edit) {
-      await supabase.from("pelanggan").update(payload).eq("id", edit.id);
-    } else {
-      await supabase.from("pelanggan").insert(payload);
-    }
-    setShowModal(false);
-    load();
-  }
-
-  async function hapus(id: string) {
-    if (!confirm("Padam pelanggan ini?")) return;
-    await supabase.from("pelanggan").delete().eq("id", id);
-    load();
+    await refreshPesanan();
   }
 
   function onPickProduk(idx: number, produkId: string) {
@@ -279,19 +262,51 @@ export default function PelangganPage() {
     0
   );
 
-  async function saveOrder() {
-    const valid = items.filter((it) => it.nama_produk.trim() !== "");
-    if (!orderCust || valid.length === 0) {
-      alert("Sila tambah sekurang-kurangnya satu item.");
+  // cari pelanggan sedia ada ikut nama atau nombor telefon
+  async function doSearch() {
+    const q = search.trim();
+    if (!q) {
+      setSearchResult(null);
+      setSearchMsg(null);
+      setSearchDup(false);
       return;
     }
+    const { data } = await supabase
+      .from("pelanggan")
+      .select("*")
+      .or(`nama.ilike.%${q}%,phone.ilike.%${q}%`);
+    const found = (data ?? []) as Pelanggan[];
+    if (found.length > 0) {
+      const c = found[0];
+      setSearchResult(c);
+      const orderCount = pesananAll.filter((p) => p.pelanggan_id === c.id).length;
+      setSearchDup(orderCount > 0);
+      setSearchMsg(
+        orderCount > 0
+          ? `Nombor/ nama "${q}" PERNAH ORDER (${orderCount} pesanan). Boleh edit & tambah pesanan sedia ada.`
+          : `Pelanggan "${c.nama}" wujud tapi belum pernah order.`
+      );
+    } else {
+      setSearchResult(null);
+      setSearchDup(false);
+      setSearchMsg(`Tiada padanan untuk "${q}". Boleh tambah baru di bawah.`);
+    }
+  }
+
+  async function insertOrderFor(pelangganId: string) {
+    const valid = items.filter((it) => it.nama_produk.trim() !== "");
+    if (valid.length === 0) return;
+    const jumlahBaru = valid.reduce(
+      (s, it) => s + (Number(it.kuantiti) || 0) * (Number(it.harga_satuan) || 0),
+      0
+    );
     const { data: inserted, error } = await supabase
       .from("pesanan")
-      .insert({ pelanggan_id: orderCust.id, jumlah })
+      .insert({ pelanggan_id: pelangganId, jumlah: jumlahBaru })
       .select()
       .single();
     if (error || !inserted) {
-      alert("Gagal simpan pesanan: " + (error?.message ?? "unknown"));
+      alert("Pelanggan disimpan, tapi pesanan gagal: " + (error?.message ?? "unknown"));
       return;
     }
     const lineItems = valid.map((it) => ({
@@ -306,29 +321,170 @@ export default function PelangganPage() {
         (Number(it.kuantiti) || 0) *
         ((Number(it.harga_satuan) || 0) - (Number(it.kos_satuan) || 0)),
     }));
-    const { error: e2 } = await supabase.from("item_pesanan").insert(lineItems);
-    if (e2) {
-      alert("Pesanan simpan tapi item gagal: " + e2.message);
+    await supabase.from("item_pesanan").insert(lineItems);
+  }
+
+  async function saveOrder() {
+    const valid = items.filter((it) => it.nama_produk.trim() !== "");
+    if (!orderCust || valid.length === 0) {
+      alert("Sila tambah sekurang-kurangnya satu item.");
       return;
     }
+    await insertOrderFor(orderCust.id);
     setShowOrder(false);
     alert("Pesanan disimpan! Ia akan muncul di Dashboard & page ini.");
-    // refresh pesanan list
-    const { data: pes } = await supabase.from("pesanan").select("*").order("tarikh", { ascending: false });
-    const { data: its } = await supabase.from("item_pesanan").select("*");
-    const itemMap = new Map<string, ItemPesanan[]>();
-    for (const it of (its ?? []) as ItemPesanan[]) {
-      const arr = itemMap.get(it.pesanan_id) ?? [];
-      arr.push(it);
-      itemMap.set(it.pesanan_id, arr);
+    await refreshPesanan();
+  }
+
+  // simpan pelanggan. elak duplicate nombor telefon: kalau nombor wujud,
+  // alert & batalkan (guna rekod sedia ada untuk tambah pesanan).
+  async function save() {
+    const phone = form.phone.trim();
+    if (!edit && phone) {
+      const { data: dup } = await supabase
+        .from("pelanggan")
+        .select("*")
+        .eq("phone", phone);
+      if (dup && dup.length > 0) {
+        const existing = dup[0] as Pelanggan;
+        const orderCount = pesananAll.filter((p) => p.pelanggan_id === existing.id).length;
+        alert(
+          `Nombor ${phone} SUDAH WUJUD (${existing.nama})${
+            orderCount > 0 ? ` dan pernah order ${orderCount} kali` : ""
+          }.\n\nGuna butang "Lihat" pada pelanggan tersebut untuk tambah pesanan, bukan tambah baru.`
+        );
+        return;
+      }
     }
-    setPesananAll(((pes ?? []) as Pesanan[]).map((p) => ({ ...p, pelanggan_nama: null, items: itemMap.get(p.id) ?? [] })));
+
+    const payload = {
+      nama: form.nama,
+      phone: form.phone || null,
+      email: form.email || null,
+      lokasi: form.lokasi || null,
+    };
+
+    if (edit) {
+      await supabase.from("pelanggan").update(payload).eq("id", edit.id);
+      setShowModal(false);
+      load();
+      return;
+    }
+
+    const { data: newCust, error } = await supabase
+      .from("pelanggan")
+      .insert(payload)
+      .select()
+      .single();
+    if (error || !newCust) {
+      alert("Gagal simpan pelanggan: " + (error?.message ?? "unknown"));
+      return;
+    }
+
+    await insertOrderFor((newCust as Pelanggan).id);
+
+    setShowModal(false);
+    load();
+    await refreshPesanan();
+  }
+
+  async function hapus(id: string) {
+    if (!confirm("Padam pelanggan ini?")) return;
+    setShowView(false);
+    await supabase.from("pelanggan").delete().eq("id", id);
+    load();
   }
 
   const fmt = (n: number) =>
     "RM " + n.toLocaleString("ms-MY", { minimumFractionDigits: 2 });
 
   const custOrders = viewCust ? pesananAll.filter((p) => p.pelanggan_id === viewCust.id) : [];
+  const lastOrder = custOrders.length > 0 ? custOrders[0] : null; // dah sorted desc
+  const repeatCount = custOrders.length;
+
+  function totalJualanFor(id: string) {
+    return pesananAll.filter((p) => p.pelanggan_id === id).reduce((s, p) => s + Number(p.jumlah), 0);
+  }
+
+  function ItemPicker({ compactTitle }: { compactTitle?: string }) {
+    return (
+      <>
+        {compactTitle && (
+          <label className="muted" style={{ fontSize: 13, display: "block", marginBottom: 8 }}>
+            {compactTitle}
+          </label>
+        )}
+        {items.map((it, idx) => (
+          <div className="item-row" key={idx}>
+            <div className="prod-picker">
+              <button
+                type="button"
+                className="prod-picker-btn"
+                onClick={() =>
+                  setItems((prev) =>
+                    prev.map((x, i) =>
+                      i === idx ? { ...x, _open: !x._open } : { ...x, _open: false }
+                    )
+                  )
+                }
+              >
+                {it.nama_produk || "— Pilih produk —"}
+              </button>
+              {it._open && (
+                <div className="prod-list">
+                  {produk.map((p) => (
+                    <button
+                      type="button"
+                      key={p.id}
+                      className="prod-opt"
+                      onClick={() => {
+                        onPickProduk(idx, p.id);
+                        setItems((prev) =>
+                          prev.map((x, i) => (i === idx ? { ...x, _open: false } : x))
+                        );
+                      }}
+                    >
+                      {p.nama} (RM{p.harga})
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <input
+              type="number"
+              min="1"
+              value={it.kuantiti}
+              onChange={(e) => updateItem(idx, { kuantiti: Number(e.target.value) })}
+            />
+            <input
+              type="number"
+              step="0.01"
+              value={it.harga_satuan}
+              onChange={(e) => updateItem(idx, { harga_satuan: Number(e.target.value) })}
+            />
+            <div className="muted" style={{ alignSelf: "center" }}>
+              {fmt((Number(it.kuantiti) || 0) * (Number(it.harga_satuan) || 0))}
+            </div>
+            <button
+              className="btn danger"
+              onClick={() => removeItemRow(idx)}
+              disabled={items.length === 1}
+            >
+              ×
+            </button>
+          </div>
+        ))}
+        <button className="btn secondary" onClick={addItemRow} style={{ marginBottom: 14 }}>
+          + Item lain
+        </button>
+        {jumlah > 0 && (
+          <div style={{ textAlign: "right", fontWeight: 700, fontSize: 16, marginBottom: 4 }}>
+            Jualan: {fmt(jumlah)} · <span style={{ color: "var(--green)" }}>Untung: {fmt(untung)}</span>
+          </div>
+        )}
+      </>
+    );
+  }
 
   return (
     <div>
@@ -361,6 +517,38 @@ export default function PelangganPage() {
         </div>
       </div>
 
+      {/* Carian pelanggan sedia ada (elak duplicate) */}
+      <div className="search-bar">
+        <input
+          placeholder="Cari nama atau nombor telefon…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && doSearch()}
+        />
+        <button className="btn" onClick={doSearch}>
+          Cari
+        </button>
+      </div>
+      {searchMsg && (
+        <div className={"search-result" + (searchResult ? (searchDup ? " dup" : " found") : "")}>
+          {searchResult ? (
+            <>
+              <div className="sr-name">{searchResult.nama}</div>
+              <div className="sr-meta">
+                {searchResult.phone ?? "-"} · {searchResult.lokasi ?? "-"}
+              </div>
+              <div className="toolbar" style={{ margin: "10px 0 0" }}>
+                <button className="btn" onClick={() => openView(searchResult)}>Lihat / Tambah Pesanan</button>
+                <button className="btn secondary" onClick={() => openEdit(searchResult)}>Edit</button>
+              </div>
+            </>
+          ) : (
+            <div className="sr-meta">{searchMsg}</div>
+          )}
+          {searchResult && <div className="sr-meta" style={{ marginTop: 6 }}>{searchMsg}</div>}
+        </div>
+      )}
+
       <div className="toolbar">
         <button className="btn" onClick={openAdd}>
           + Tambah Pelanggan
@@ -372,46 +560,105 @@ export default function PelangganPage() {
       ) : rows.length === 0 ? (
         <div className="empty">Tiada pelanggan lagi. Klik “Tambah Pelanggan”.</div>
       ) : (
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Nama</th>
-              <th>Telefon</th>
-              <th>Email</th>
-              <th>Lokasi</th>
-              <th># Pesanan</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((p) => {
-              const bil = pesananAll.filter((x) => x.pelanggan_id === p.id).length;
-              return (
-                <tr key={p.id}>
-                  <td data-label="Nama">{p.nama}</td>
-                  <td data-label="Telefon">{p.phone ?? "-"}</td>
-                  <td data-label="Email">{p.email ?? "-"}</td>
-                  <td data-label="Lokasi">{p.lokasi ?? "-"}</td>
-                  <td data-label="# Pesanan">{bil}</td>
-                  <td className="actions-cell" style={{ textAlign: "right", whiteSpace: "nowrap" }}>
-                    <button className="btn secondary" onClick={() => openView(p)}>
-                      Lihat
-                    </button>{" "}
-                    <button className="btn" onClick={() => openOrder(p)}>
-                      + Pesanan
-                    </button>{" "}
-                    <button className="btn secondary" onClick={() => openEdit(p)}>
-                      Edit
-                    </button>{" "}
-                    <button className="btn danger" onClick={() => hapus(p.id)}>
-                      Padam
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+        <div className="simple-list">
+          {rows.map((p) => {
+            const bil = pesananAll.filter((x) => x.pelanggan_id === p.id).length;
+            return (
+              <button key={p.id} className="list-row" onClick={() => openView(p)}>
+                <div className="list-row-main">
+                  <span className="list-row-title">{p.nama}</span>
+                  <span className="list-row-sub">
+                    {p.phone ?? "-"} · {bil} pesanan
+                  </span>
+                </div>
+                <div className="list-row-value">{fmt(totalJualanFor(p.id))}</div>
+                <span className="list-row-chevron">›</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {showView && viewCust && (
+        <div className="modal-backdrop" onClick={() => setShowView(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h3>{viewCust.nama}</h3>
+            <div className="detail-grid">
+              <div className="detail-row">
+                <span className="muted">Telefon</span>
+                <span>{viewCust.phone ?? "-"}</span>
+              </div>
+              <div className="detail-row">
+                <span className="muted">Email</span>
+                <span>{viewCust.email ?? "-"}</span>
+              </div>
+              <div className="detail-row">
+                <span className="muted">Lokasi</span>
+                <span>{viewCust.lokasi ?? "-"}</span>
+              </div>
+              <div className="detail-row">
+                <span className="muted">Total Jualan</span>
+                <span style={{ color: "var(--accent)", fontWeight: 700 }}>{fmt(totalJualanFor(viewCust.id))}</span>
+              </div>
+              <div className="detail-row">
+                <span className="muted">Jumlah Pesanan</span>
+                <span style={{ fontWeight: 700 }}>{repeatCount}</span>
+              </div>
+              <div className="detail-row">
+                <span className="muted">Last Order</span>
+                <span style={{ fontWeight: 700 }}>
+                  {lastOrder ? new Date(lastOrder.tarikh).toLocaleString("ms-MY") : "—"}
+                </span>
+              </div>
+            </div>
+
+            <div className="toolbar" style={{ marginBottom: 16 }}>
+              <button className="btn" onClick={() => openOrder(viewCust)}>+ Pesanan</button>
+              <button className="btn secondary" onClick={() => openEdit(viewCust)}>Edit</button>
+              <button className="btn danger" onClick={() => hapus(viewCust.id)}>Padam</button>
+            </div>
+
+            <h4 style={{ margin: "0 0 10px" }}>Sejarah Pesanan</h4>
+            {custOrders.length === 0 ? (
+              <p className="muted">Pelanggan ini belum ada pesanan. Klik "+ Pesanan" untuk rekod.</p>
+            ) : (
+              custOrders.map((p) => (
+                <div key={p.id} style={{ marginBottom: 16, borderBottom: "1px solid var(--border)", paddingBottom: 12 }}>
+                  <div className="muted">
+                    {new Date(p.tarikh).toLocaleString("ms-MY")} · {fmt(Number(p.jumlah))}
+                  </div>
+                  <table className="table" style={{ marginTop: 8 }}>
+                    <thead>
+                      <tr>
+                        <th>Produk</th>
+                        <th>Qty</th>
+                        <th>Untung</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {p.items.map((it) => (
+                        <tr key={it.id}>
+                          <td data-label="Produk">{it.nama_produk}</td>
+                          <td data-label="Qty">{it.kuantiti}</td>
+                          <td data-label="Untung" style={{ color: "var(--green)" }}>+{fmt(Number(it.untung))}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  <div className="toolbar" style={{ marginTop: 8 }}>
+                    <button className="btn" onClick={() => openEditOrder(p)}>Edit</button>{" "}
+                    <button className="btn danger" onClick={() => deleteOrder(p.id)}>Padam</button>
+                  </div>
+                </div>
+              ))
+            )}
+            <div className="modal-actions">
+              <button className="btn secondary" onClick={() => setShowView(false)}>
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {showModal && (
@@ -453,6 +700,11 @@ export default function PelangganPage() {
                 ))}
               </select>
             </div>
+
+            {!edit && (
+              <ItemPicker compactTitle="Produk / Pesanan Pertama (pilihan)" />
+            )}
+
             <div className="modal-actions">
               <button className="btn secondary" onClick={() => setShowModal(false)}>
                 Batal
@@ -469,126 +721,13 @@ export default function PelangganPage() {
         <div className="modal-backdrop" onClick={() => setShowOrder(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h3>Pesanan untuk {orderCust.nama}</h3>
-            {items.map((it, idx) => (
-              <div className="item-row" key={idx}>
-                <div className="prod-picker">
-                  <button
-                    type="button"
-                    className="prod-picker-btn"
-                    onClick={() =>
-                      setItems((prev) =>
-                        prev.map((x, i) =>
-                          i === idx ? { ...x, _open: !x._open } : { ...x, _open: false }
-                        )
-                      )
-                    }
-                  >
-                    {it.nama_produk || "— Pilih produk —"}
-                  </button>
-                  {it._open && (
-                    <div className="prod-list">
-                      {produk.map((p) => (
-                        <button
-                          type="button"
-                          key={p.id}
-                          className="prod-opt"
-                          onClick={() => {
-                            onPickProduk(idx, p.id);
-                            setItems((prev) =>
-                              prev.map((x, i) => (i === idx ? { ...x, _open: false } : x))
-                            );
-                          }}
-                        >
-                          {p.nama} (RM{p.harga})
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <input
-                  type="number"
-                  min="1"
-                  value={it.kuantiti}
-                  onChange={(e) => updateItem(idx, { kuantiti: Number(e.target.value) })}
-                />
-                <input
-                  type="number"
-                  step="0.01"
-                  value={it.harga_satuan}
-                  onChange={(e) =>
-                    updateItem(idx, { harga_satuan: Number(e.target.value) })
-                  }
-                />
-                <div className="muted" style={{ alignSelf: "center" }}>
-                  {fmt((Number(it.kuantiti) || 0) * (Number(it.harga_satuan) || 0))}
-                </div>
-                <button
-                  className="btn danger"
-                  onClick={() => removeItemRow(idx)}
-                  disabled={items.length === 1}
-                >
-                  ×
-                </button>
-              </div>
-            ))}
-            <button className="btn secondary" onClick={addItemRow} style={{ marginBottom: 14 }}>
-              + Item lain
-            </button>
-            <div style={{ textAlign: "right", fontWeight: 700, fontSize: 18 }}>
-              Jualan: {fmt(jumlah)} · <span style={{ color: "var(--green)" }}>Untung: {fmt(untung)}</span>
-            </div>
+            <ItemPicker />
             <div className="modal-actions">
               <button className="btn secondary" onClick={() => setShowOrder(false)}>
                 Batal
               </button>
               <button className="btn" onClick={saveOrder}>
                 Simpan Pesanan
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showView && viewCust && (
-        <div className="modal-backdrop" onClick={() => setShowView(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h3>Pesanan: {viewCust.nama}</h3>
-            {custOrders.length === 0 ? (
-              <p className="muted">Pelanggan ini belum ada pesanan.</p>
-            ) : (
-              custOrders.map((p) => (
-                <div key={p.id} style={{ marginBottom: 16, borderBottom: "1px solid var(--border)", paddingBottom: 12 }}>
-                  <div className="muted">
-                    {new Date(p.tarikh).toLocaleString("ms-MY")} · {fmt(Number(p.jumlah))}
-                  </div>
-                  <table className="table" style={{ marginTop: 8 }}>
-                    <thead>
-                      <tr>
-                        <th>Produk</th>
-                        <th>Qty</th>
-                        <th>Untung</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {p.items.map((it) => (
-                        <tr key={it.id}>
-                          <td data-label="Produk">{it.nama_produk}</td>
-                          <td data-label="Qty">{it.kuantiti}</td>
-                          <td data-label="Untung" style={{ color: "var(--green)" }}>+{fmt(Number(it.untung))}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  <div className="toolbar" style={{ marginTop: 8 }}>
-                    <button className="btn" onClick={() => openEditOrder(p)}>Edit</button>{" "}
-                    <button className="btn danger" onClick={() => deleteOrder(p.id)}>Padam</button>
-                  </div>
-                </div>
-              ))
-            )}
-            <div className="modal-actions">
-              <button className="btn secondary" onClick={() => setShowView(false)}>
-                Tutup
               </button>
             </div>
           </div>
@@ -659,7 +798,6 @@ export default function PelangganPage() {
           </div>
         </div>
       )}
-
     </div>
   );
 }

@@ -358,7 +358,7 @@ textarea {
   margin-bottom: 28px;
 }
 
-/* ===== Hero card: Jualan Tahun Ini (fokus utama dashboard) ===== */
+/* ===== Hero card: Jualan Tahun Ini + Total Untung ===== */
 .hero-card {
   position: relative;
   overflow: hidden;
@@ -434,6 +434,9 @@ textarea {
 .hero-badge.down {
   background: rgba(239, 68, 68, 0.22);
   border-color: rgba(239, 68, 68, 0.4);
+}
+.hero-card-untung {
+  background: linear-gradient(135deg, var(--green) 0%, #0b1220 145%);
 }
 
 .card {
@@ -661,6 +664,136 @@ textarea {
   vertical-align: middle;
 }
 
+/* ===== Senarai ringkas (klik untuk detail) — Produk & Pelanggan ===== */
+.simple-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.list-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin: 0;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  text-align: left;
+  color: var(--text);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.list-row:hover {
+  border-color: var(--accent);
+  background: var(--panel-2);
+}
+.list-row-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+.list-row-title {
+  font-weight: 600;
+  font-size: 14.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.list-row-sub {
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.list-row-value {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--accent);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.list-row-chevron {
+  color: var(--muted);
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+/* ===== Detail grid (dalam modal) ===== */
+.detail-grid {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13.5px;
+}
+.detail-row:last-child {
+  border-bottom: none;
+}
+.detail-row .muted {
+  font-size: 13px;
+}
+
+/* ===== Preview margin/untung live (borang tambah produk) ===== */
+.margin-preview {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--panel-2);
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.margin-preview strong {
+  font-size: 15px;
+}
+
+/* ===== Search pelanggan (cek duplicate nombor) ===== */
+.search-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.search-result {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  background: var(--panel-2);
+}
+.search-result.found {
+  border-color: var(--green);
+}
+.search-result.dup {
+  border-color: var(--red);
+}
+.search-result .sr-name {
+  font-weight: 700;
+  font-size: 15px;
+}
+.search-result .sr-meta {
+  color: var(--muted);
+  font-size: 12.5px;
+  margin-top: 4px;
+}
+
 .recent-list {
   display: flex;
   flex-direction: column;
@@ -708,7 +841,6 @@ textarea {
     display: flex;
   }
 
-  /* sidebar jadi drawer yang slide masuk dari kiri, bukan bar horizontal */
   .sidebar,
   .sidebar.collapsed {
     position: fixed;
@@ -898,7 +1030,6 @@ textarea {
     margin: 0 !important;
   }
 
-  /* item-row (form pesanan) jadi susun menegak, lebih senang isi di telefon */
   .item-row {
     grid-template-columns: 1fr;
     gap: 8px;
@@ -917,6 +1048,51 @@ textarea {
   .panel-box .btn {
     width: 100%;
     text-align: center;
+  }
+
+  /* negeri pie & 5 teratas jadi kemas di mobile */
+  .negeri-pie-wrap {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 16px;
+    gap: 14px;
+  }
+  .negeri-pie {
+    width: 170px;
+    height: 170px;
+  }
+  .negeri-legend {
+    width: 100%;
+  }
+  .negeri-leg {
+    justify-content: center;
+  }
+  .top-negeri {
+    padding: 14px;
+  }
+  .top-row {
+    grid-template-columns: 22px 1fr auto;
+    gap: 6px;
+    padding: 7px 0;
+  }
+  .top-name {
+    font-size: 13px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .top-val {
+    font-size: 11.5px;
+    white-space: nowrap;
+  }
+
+  /* chart kekal scroll-x di mobile (tak pecah layout) */
+  .panel-chart {
+    overflow-x: auto;
+  }
+  .panel-chart .chart {
+    min-width: 480px;
   }
 }
 
@@ -1072,8 +1248,6 @@ textarea {
   color: #fff;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
-/* text sub-label (cth "Kos", "Tahun aktif") di dalam kad gradient warna:
-   .muted asal terlalu gelap & hilang atas background terang -- overridekan supaya sentiasa nampak */
 .cards-lg .card .muted {
   color: rgba(255, 255, 255, 0.82) !important;
 }
@@ -1146,7 +1320,7 @@ textarea {
   display: block;
 }
 
-/* ===== Negeri bars ===== */
+/* ===== Negeri bars / pie ===== */
 .negeri-bars {
   display: flex;
   flex-direction: column;
@@ -1183,7 +1357,6 @@ textarea {
   color: var(--muted);
 }
 
-/* ===== Negeri pie (Pelanggan) ===== */
 .negeri-layout {
   display: grid;
   grid-template-columns: 1fr 280px;

@@ -164,6 +164,14 @@ export default function Dashboard() {
         </div>
       </div>
 
+      <div className="hero-card hero-card-untung">
+        <div className="hero-glow" />
+        <div className="hero-top">
+          <span className="hero-label">Total Untung</span>
+        </div>
+        <div className="hero-value">{fmt(kpi.untung)}</div>
+      </div>
+
       <div className="cards cards-lg">
         <div className="card card-c1">
           <div className="label">Jualan Hari Ini</div>
@@ -172,10 +180,6 @@ export default function Dashboard() {
         <div className="card card-c2">
           <div className="label">Jualan Bulan Ini</div>
           <div className="value">{fmt(kpi.bulanIni)}</div>
-        </div>
-        <div className="card card-c4">
-          <div className="label">Total Untung</div>
-          <div className="value">{fmt(kpi.untung)}</div>
         </div>
       </div>
 
