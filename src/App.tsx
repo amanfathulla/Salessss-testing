@@ -1,9 +1,10 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Routes, Route, NavLink, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./lib/auth";
 import { initTheme, getTheme } from "./lib/theme";
 import { getCompany } from "./lib/company";
 import Logo from "./components/Logo";
+import { IconDashboard, IconBox, IconUsers, IconGear, IconLogout, IconChevron } from "./components/icons";
 import Dashboard from "./pages/Dashboard";
 import ProdukPage from "./pages/Produk";
 import PelangganPage from "./pages/Pelanggan";
@@ -11,40 +12,74 @@ import Setting from "./pages/Setting";
 import Login from "./pages/Login";
 
 const nav = [
-  { to: "/", label: "📊 Dashboard", end: true },
-  { to: "/produk", label: "📦 Produk" },
-  { to: "/pelanggan", label: "👥 Pelanggan" },
-  { to: "/setting", label: "⚙️ Setting" },
+  { to: "/", label: "Dashboard", icon: IconDashboard, end: true },
+  { to: "/produk", label: "Produk", icon: IconBox },
+  { to: "/pelanggan", label: "Pelanggan", icon: IconUsers },
+  { to: "/setting", label: "Setting", icon: IconGear },
 ];
+
+const SIDEBAR_KEY = "sp_sidebar_collapsed";
+
+function initials(email?: string | null): string {
+  if (!email) return "?";
+  const name = email.split("@")[0];
+  const parts = name.split(/[._-]/).filter(Boolean);
+  const chars = parts.length > 1 ? parts[0][0] + parts[1][0] : name.slice(0, 2);
+  return chars.toUpperCase();
+}
 
 function Shell() {
   const { user, signOut } = useAuth();
   const company = getCompany();
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem(SIDEBAR_KEY) === "1");
+
+  useEffect(() => {
+    localStorage.setItem(SIDEBAR_KEY, collapsed ? "1" : "0");
+  }, [collapsed]);
 
   return (
     <div className="layout">
-      <aside className="sidebar">
+      <aside className={`sidebar${collapsed ? " collapsed" : ""}`}>
+        <button
+          className="sidebar-collapse-btn"
+          onClick={() => setCollapsed((c) => !c)}
+          aria-label={collapsed ? "Kembangkan bar sisi" : "Kuncupkan bar sisi"}
+          title={collapsed ? "Kembangkan" : "Kuncupkan"}
+        >
+          <span className="collapse-chevron"><IconChevron size={13} /></span>
+        </button>
+
         <div className="brand">
           <Logo size={26} />
-          <span>{company}</span>
+          <span className="brand-name">{company}</span>
         </div>
+
+        <div className="nav-section-label">Menu</div>
         <nav>
-          {nav.map((n) => (
-            <NavLink key={n.to} to={n.to} end={n.end}>
-              {n.label}
-            </NavLink>
-          ))}
+          {nav.map((n) => {
+            const Icon = n.icon;
+            return (
+              <NavLink key={n.to} to={n.to} end={n.end} title={n.label}>
+                <span className="nav-icon"><Icon size={18} /></span>
+                <span className="nav-label">{n.label}</span>
+              </NavLink>
+            );
+          })}
         </nav>
+
         <div className="sidebar-foot">
-          <div className="muted" style={{ marginBottom: 8, fontSize: 12 }}>
-            {user?.email}
+          <div className="sidebar-user" title={user?.email ?? undefined}>
+            <span className="avatar">{initials(user?.email)}</span>
+            <span className="user-email">{user?.email}</span>
           </div>
           <button
-            className="btn secondary"
-            style={{ width: "100%" }}
+            className="sidebar-logout-btn"
             onClick={() => signOut()}
+            title="Log Keluar"
+            aria-label="Log Keluar"
           >
-            Log Keluar
+            <IconLogout size={17} />
+            <span className="nav-label">Log Keluar</span>
           </button>
         </div>
       </aside>
