@@ -82,3 +82,13 @@ export function IconClose({ size = 18 }: IconProps) {
     </svg>
   );
 }
+
+export function IconNote({ size = 18 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" {...base}>
+      <path d="M5 4.5h11l3.5 3.5V19a.5.5 0 0 1-.5.5H5a.5.5 0 0 1-.5-.5V5a.5.5 0 0 1 .5-.5Z" />
+      <path d="M15.5 4.5V8h3.5" />
+      <path d="M8 11.5h8M8 14.5h8M8 17.5h5" />
+    </svg>
+  );
+}

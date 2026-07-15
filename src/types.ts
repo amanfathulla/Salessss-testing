@@ -50,3 +50,10 @@ export type RekodTahunan = {
   untung: number;
   catatan: string | null;
 };
+
+export type Nota = {
+  id: string;
+  tajuk: string;
+  isi: string | null;
+  created_at: string;
+};

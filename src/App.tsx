@@ -4,10 +4,11 @@ import { AuthProvider, useAuth } from "./lib/auth";
 import { initTheme, getTheme } from "./lib/theme";
 import { getCompany } from "./lib/company";
 import Logo from "./components/Logo";
-import { IconDashboard, IconBox, IconUsers, IconGear, IconLogout, IconChevron, IconMenu, IconClose } from "./components/icons";
+import { IconDashboard, IconBox, IconUsers, IconGear, IconLogout, IconChevron, IconMenu, IconClose, IconNote } from "./components/icons";
 import Dashboard from "./pages/Dashboard";
 import ProdukPage from "./pages/Produk";
 import PelangganPage from "./pages/Pelanggan";
+import NotaPage from "./pages/Nota";
 import Setting from "./pages/Setting";
 import Login from "./pages/Login";
 
@@ -15,6 +16,7 @@ const nav = [
   { to: "/", label: "Dashboard", icon: IconDashboard, end: true },
   { to: "/produk", label: "Produk", icon: IconBox },
   { to: "/pelanggan", label: "Pelanggan", icon: IconUsers },
+  { to: "/nota", label: "Marketing Nota", icon: IconNote },
   { to: "/setting", label: "Setting", icon: IconGear },
 ];
 
@@ -127,6 +129,7 @@ function Shell() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/produk" element={<ProdukPage />} />
           <Route path="/pelanggan" element={<PelangganPage />} />
+          <Route path="/nota" element={<NotaPage />} />
           <Route path="/setting" element={<Setting />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
