@@ -102,12 +102,12 @@ export default function ProdukPage() {
           <tbody>
             {rows.map((p) => (
               <tr key={p.id}>
-                <td>{p.nama}</td>
-                <td>{fmt(Number(p.harga))}</td>
-                <td>{fmt(Number(p.kos))}</td>
-                <td style={{ color: "var(--green)" }}>+{fmt(untungUnit(p))}</td>
-                <td>{p.stok}</td>
-                <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
+                <td data-label="Nama">{p.nama}</td>
+                <td data-label="Harga Jual">{fmt(Number(p.harga))}</td>
+                <td data-label="Kos Beli">{fmt(Number(p.kos))}</td>
+                <td data-label="Untung/Unit" style={{ color: "var(--green)" }}>+{fmt(untungUnit(p))}</td>
+                <td data-label="Stok">{p.stok}</td>
+                <td className="actions-cell" style={{ textAlign: "right", whiteSpace: "nowrap" }}>
                   <button className="btn secondary" onClick={() => openEdit(p)}>
                     Edit
                   </button>{" "}

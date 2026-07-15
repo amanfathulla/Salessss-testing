@@ -107,6 +107,10 @@ export default function Dashboard() {
 
   const fmt = (n: number) => "RM " + n.toLocaleString("ms-MY", { minimumFractionDigits: 2 });
   const maxVal = Math.max(1, ...months.map((m) => Math.max(m.jualan, m.untung)));
+  const bezaPct =
+    lastYear && Number(lastYear.jualan) > 0
+      ? ((kpi.tahunIni - Number(lastYear.jualan)) / Number(lastYear.jualan)) * 100
+      : null;
 
   return (
     <div>
@@ -143,6 +147,23 @@ export default function Dashboard() {
         <div className="banner">⚠️ Sila salin <code>.env.example</code> ke <code>.env</code> dan isi <code>VITE_SUPABASE_PUBLISHABLE_KEY</code>, kemudian restart dev server.</div>
       )}
 
+      <div className="hero-card">
+        <div className="hero-glow" />
+        <div className="hero-top">
+          <span className="hero-label">Jualan Tahun Ini</span>
+          <span className="hero-year-tag">{THIS_YEAR}</span>
+        </div>
+        <div className="hero-value">{fmt(kpi.tahunIni)}</div>
+        <div className="hero-meta">
+          <span>Kos {fmt(curCost)}</span>
+          {bezaPct !== null && (
+            <span className={"hero-badge" + (bezaPct >= 0 ? " up" : " down")}>
+              {bezaPct >= 0 ? "▲" : "▼"} {Math.abs(bezaPct).toFixed(1)}% berbanding {LAST_YEAR}
+            </span>
+          )}
+        </div>
+      </div>
+
       <div className="cards cards-lg">
         <div className="card card-c1">
           <div className="label">Jualan Hari Ini</div>
@@ -152,40 +173,9 @@ export default function Dashboard() {
           <div className="label">Jualan Bulan Ini</div>
           <div className="value">{fmt(kpi.bulanIni)}</div>
         </div>
-        <div className="card card-c3">
-          <div className="label">Jualan {THIS_YEAR} (auto)</div>
-          <div className="value">{fmt(kpi.tahunIni)}</div>
-          <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>Kos {fmt(curCost)}</div>
-        </div>
         <div className="card card-c4">
           <div className="label">Total Untung</div>
           <div className="value">{fmt(kpi.untung)}</div>
-        </div>
-      </div>
-
-      <div className="cards cards-lg">
-        <div className="card card-c2">
-          <div className="label">Jualan {LAST_YEAR} (rekod)</div>
-          <div className="value">{lastYear ? fmt(Number(lastYear.jualan)) : "—"}</div>
-          <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>
-            {lastYear ? "Untung " + fmt(Number(lastYear.untung)) : "Tiada rekod"}
-          </div>
-        </div>
-        <div className="card card-c4">
-          <div className="label">Beza {THIS_YEAR} vs {LAST_YEAR}</div>
-          <div className="value">
-            {lastYear && Number(lastYear.jualan) > 0
-              ? (((kpi.tahunIni - Number(lastYear.jualan)) / Number(lastYear.jualan)) * 100).toFixed(1) + "%"
-              : "—"}
-          </div>
-        </div>
-        <div className="card card-c1" style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
-          <div className="muted" style={{ fontSize: 13 }}>Tahun aktif</div>
-          <div className="value" style={{ fontSize: 28 }}>{THIS_YEAR}</div>
-        </div>
-        <div className="card card-c3" style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
-          <div className="muted" style={{ fontSize: 13 }}>Tahun lepas</div>
-          <div className="value" style={{ fontSize: 28 }}>{LAST_YEAR}</div>
         </div>
       </div>
 

@@ -358,6 +358,84 @@ textarea {
   margin-bottom: 28px;
 }
 
+/* ===== Hero card: Jualan Tahun Ini (fokus utama dashboard) ===== */
+.hero-card {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, var(--accent) 0%, #0b1220 145%);
+  border-radius: 20px;
+  padding: clamp(22px, 4vw, 34px) clamp(22px, 4vw, 36px);
+  margin-bottom: 18px;
+  box-shadow: 0 10px 34px rgba(0, 0, 0, 0.32);
+}
+.hero-glow {
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.22), transparent 70%);
+  pointer-events: none;
+}
+.hero-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  position: relative;
+}
+.hero-label {
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 700;
+  font-size: clamp(13px, 2.4vw, 15px);
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+.hero-year-tag {
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+  font-weight: 700;
+  font-size: 12.5px;
+  padding: 4px 12px;
+  border-radius: 999px;
+}
+.hero-value {
+  color: #fff;
+  font-weight: 800;
+  font-size: clamp(34px, 8vw, 58px);
+  line-height: 1.1;
+  margin: 10px 0 4px;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  position: relative;
+}
+.hero-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 13.5px;
+  position: relative;
+}
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 12.5px;
+  color: #fff;
+}
+.hero-badge.down {
+  background: rgba(239, 68, 68, 0.22);
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
 .card {
   background: var(--panel);
   border: 1px solid var(--border);
@@ -755,6 +833,90 @@ textarea {
 @media (max-width: 380px) {
   .cards-lg {
     grid-template-columns: 1fr;
+  }
+}
+
+/* ===== Table -> senarai kad di mobile (lebih senang baca & tap) ===== */
+@media (max-width: 640px) {
+  .table {
+    border-radius: 0;
+    background: transparent;
+  }
+  .table thead {
+    display: none;
+  }
+  .table,
+  .table tbody,
+  .table tr,
+  .table td {
+    display: block;
+    width: 100%;
+  }
+  .table tr {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 10px;
+    overflow: hidden;
+  }
+  .table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13.5px;
+    text-align: right;
+  }
+  .table tr td:last-child {
+    border-bottom: none;
+  }
+  .table td::before {
+    content: attr(data-label);
+    color: var(--muted);
+    font-weight: 600;
+    font-size: 12px;
+    text-align: left;
+    flex-shrink: 0;
+  }
+  .table td:not([data-label])::before {
+    content: none;
+  }
+  .table td.actions-cell {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding: 12px 14px;
+  }
+  .table td.actions-cell::before {
+    content: none;
+  }
+  .table td.actions-cell .btn {
+    width: 100%;
+    text-align: center;
+    margin: 0 !important;
+  }
+
+  /* item-row (form pesanan) jadi susun menegak, lebih senang isi di telefon */
+  .item-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    background: var(--panel-2);
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 10px;
+  }
+  .item-row > * {
+    width: 100%;
+  }
+  .toolbar .btn {
+    flex: 1 1 auto;
+    text-align: center;
+  }
+  .panel-box .btn {
+    width: 100%;
+    text-align: center;
   }
 }
 

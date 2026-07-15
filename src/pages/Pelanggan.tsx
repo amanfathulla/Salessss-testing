@@ -388,12 +388,12 @@ export default function PelangganPage() {
               const bil = pesananAll.filter((x) => x.pelanggan_id === p.id).length;
               return (
                 <tr key={p.id}>
-                  <td>{p.nama}</td>
-                  <td>{p.phone ?? "-"}</td>
-                  <td>{p.email ?? "-"}</td>
-                  <td>{p.lokasi ?? "-"}</td>
-                  <td>{bil}</td>
-                  <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
+                  <td data-label="Nama">{p.nama}</td>
+                  <td data-label="Telefon">{p.phone ?? "-"}</td>
+                  <td data-label="Email">{p.email ?? "-"}</td>
+                  <td data-label="Lokasi">{p.lokasi ?? "-"}</td>
+                  <td data-label="# Pesanan">{bil}</td>
+                  <td className="actions-cell" style={{ textAlign: "right", whiteSpace: "nowrap" }}>
                     <button className="btn secondary" onClick={() => openView(p)}>
                       Lihat
                     </button>{" "}
@@ -572,9 +572,9 @@ export default function PelangganPage() {
                     <tbody>
                       {p.items.map((it) => (
                         <tr key={it.id}>
-                          <td>{it.nama_produk}</td>
-                          <td>{it.kuantiti}</td>
-                          <td style={{ color: "var(--green)" }}>+{fmt(Number(it.untung))}</td>
+                          <td data-label="Produk">{it.nama_produk}</td>
+                          <td data-label="Qty">{it.kuantiti}</td>
+                          <td data-label="Untung" style={{ color: "var(--green)" }}>+{fmt(Number(it.untung))}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -660,7 +660,6 @@ export default function PelangganPage() {
         </div>
       )}
 
-      <NegeriPie data={negeriAgg} />
     </div>
   );
 }
