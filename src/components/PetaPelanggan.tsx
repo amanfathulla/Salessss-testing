@@ -3,65 +3,106 @@ import { data } from "krackedmaps";
 import { supabase, isConfigured } from "../lib/supabase";
 
 // ---------------------------------------------------------------------------
-// Map Supabase `pelanggan.lokasi` value -> krackedmaps slug (data.STATES)
+// Case-insensitive lookup: negeri name (any case) -> krackedmaps slug
 // ---------------------------------------------------------------------------
-const LOKASI_TO_SLUG: Record<string, string> = {
-  "Johor": "johor",
-  "Kedah": "kedah",
-  "Kelantan": "kelantan",
-  "Melaka": "melaka",
-  "Negeri Sembilan": "negeri-sembilan",
-  "Pahang": "pahang",
-  "Pulau Pinang": "penang",
-  "Perak": "perak",
-  "Perlis": "perlis",
-  "Sabah": "sabah",
-  "Sarawak": "sarawak",
-  "Selangor": "selangor",
-  "Terengganu": "terengganu",
-  // Wilayah Persekutuan generic -> letak kat KL (tiada slug "wilayah persekutuan")
-  "Wilayah Persekutuan": "kuala-lumpur",
-  "Kuala Lumpur": "kuala-lumpur",
-  "Putrajaya": "putrajaya",
-  "Labuan": "labuan",
+const LOKASI_MAP: Record<string, string> = {
+  // exact + common variants, all lowercase keys
+  johor: "johor",
+  kedah: "kedah",
+  kelantan: "kelantan",
+  melaka: "melaka",
+  melacca: "melaka",
+  "negeri sembilan": "negeri-sembilan",
+  ns: "negeri-sembilan",
+  pahang: "pahang",
+  "pulau pinang": "penang",
+  penang: "penang",
+  "pinang": "penang",
+  perak: "perak",
+  perlis: "perlis",
+  sabah: "sabah",
+  sarawak: "sarawak",
+  selangor: "selangor",
+  terengganu: "terengganu",
+  trengganu: "terengganu",
+  "wilayah persekutuan": "kuala-lumpur",
+  "wilayah persekutuan kuala lumpur": "kuala-lumpur",
+  "wilayah persekutuan putrajaya": "putrajaya",
+  "wilayah persekutuan labuan": "labuan",
+  wp: "kuala-lumpur",
+  "w.p": "kuala-lumpur",
+  "kuala lumpur": "kuala-lumpur",
+  kl: "kuala-lumpur",
+  putrajaya: "putrajaya",
+  labuan: "labuan",
 };
 
+function lokasiToSlug(raw: string): string | null {
+  const key = raw.trim().toLowerCase();
+  // try exact match
+  if (LOKASI_MAP[key]) return LOKASI_MAP[key];
+  // try without "wilayah persekutuan" prefix
+  if (key.startsWith("wilayah persekutuan ")) {
+    const sub = key.slice(20);
+    if (LOKASI_MAP[sub]) return LOKASI_MAP[sub];
+    if (sub.includes("kuala lumpur") || sub === "kl") return "kuala-lumpur";
+    if (sub.includes("putrajaya")) return "putrajaya";
+    if (sub.includes("labuan")) return "labuan";
+  }
+  // try partial match for pulau pinang
+  if (key.includes("pinang") || key.includes("penang")) return "penang";
+  return null;
+}
+
 const SLUG_TO_NAME: Record<string, string> = {
-  "johor": "Johor",
-  "kedah": "Kedah",
-  "kelantan": "Kelantan",
-  "melaka": "Melaka",
+  johor: "Johor",
+  kedah: "Kedah",
+  kelantan: "Kelantan",
+  melaka: "Melaka",
   "negeri-sembilan": "Negeri Sembilan",
-  "pahang": "Pahang",
-  "penang": "Pulau Pinang",
-  "perak": "Perak",
-  "perlis": "Perlis",
-  "sabah": "Sabah",
-  "sarawak": "Sarawak",
-  "selangor": "Selangor",
-  "terengganu": "Terengganu",
+  pahang: "Pahang",
+  penang: "Pulau Pinang",
+  perak: "Perak",
+  perlis: "Perlis",
+  sabah: "Sabah",
+  sarawak: "Sarawak",
+  selangor: "Selangor",
+  terengganu: "Terengganu",
   "kuala-lumpur": "Kuala Lumpur",
-  "putrajaya": "Putrajaya",
-  "labuan": "Labuan",
+  putrajaya: "Putrajaya",
+  labuan: "Labuan",
 };
+
+// 16 unique colors — satu per negeri, meriah
+const STATE_COLORS: Record<string, string> = {
+  johor: "#e63946",
+  kedah: "#f4a261",
+  kelantan: "#2a9d8f",
+  melaka: "#e9c46a",
+  "negeri-sembilan": "#457b9d",
+  pahang: "#a855f7",
+  penang: "#06b6d4",
+  perak: "#84cc16",
+  perlis: "#f97316",
+  sabah: "#ec4899",
+  sarawak: "#14b8a6",
+  selangor: "#3b82f6",
+  terengganu: "#ef4444",
+  "kuala-lumpur": "#fbbf24",
+  putrajaya: "#a78bfa",
+  labuan: "#22c55e",
+};
+
+const NO_DATA_COLOR = "#1a2332";
 
 interface ProjectedState {
   slug: string;
   name: string;
   d: string;
   count: number;
+  centroid: { x: number; y: number };
 }
 
-function colorForRatio(t: number): string {
-  if (t <= 0) return "#2C2C2A";
-  if (t < 0.25) return "#4A1B0C";
-  if (t < 0.5) return "#712B13";
-  if (t < 0.75) return "#993C1D";
-  if (t < 0.95) return "#C8203C";
-  return "#CFA227";
-}
-
-// Gunakan viewBox sebenar dari krackedmaps PROJECTION (viewW/viewH)
 const VIEW_W = 799.85;
 const VIEW_H = 352.74;
 
@@ -99,7 +140,7 @@ export default function PetaPelanggan({ refreshKey }: { refreshKey?: number }) {
       for (const row of rows ?? []) {
         const raw = (row as { lokasi: string | null }).lokasi;
         if (!raw) continue;
-        const slug = LOKASI_TO_SLUG[raw.trim()];
+        const slug = lokasiToSlug(raw);
         if (!slug) continue;
         tally[slug] = (tally[slug] ?? 0) + 1;
       }
@@ -125,12 +166,13 @@ export default function PetaPelanggan({ refreshKey }: { refreshKey?: number }) {
           name: SLUG_TO_NAME[slug] ?? f.name,
           d: f.d as string,
           count: counts[slug] ?? 0,
+          centroid: f.centroid ?? { x: 0, y: 0 },
         };
       }),
     [states, counts]
   );
 
-  const maxCount = Math.max(1, ...projectedStates.map((s) => s.count));
+  const totalPelanggan = projectedStates.reduce((s, st) => s + st.count, 0);
 
   if (loading) {
     return (
@@ -161,10 +203,11 @@ export default function PetaPelanggan({ refreshKey }: { refreshKey?: number }) {
         <svg viewBox={`0 0 ${VIEW_W} ${VIEW_H}`} role="img" style={{ width: "100%", height: "100%", display: "block" }}>
           <title>Peta jumlah pelanggan ikut negeri</title>
           {projectedStates.map((s) => {
-            const ratio = s.count / maxCount;
-            const h = 3 + ratio * 14;
-            const isSelected = selected?.slug === s.slug;
             const hasData = s.count > 0;
+            const baseColor = STATE_COLORS[s.slug] ?? "#555";
+            const fillColor = hasData ? baseColor : NO_DATA_COLOR;
+            const isSelected = selected?.slug === s.slug;
+            const opacity = hasData ? 1 : 0.4;
             return (
               <g
                 key={s.slug}
@@ -174,25 +217,26 @@ export default function PetaPelanggan({ refreshKey }: { refreshKey?: number }) {
                 <path
                   d={s.d}
                   fill="#000000"
-                  opacity={0.35}
-                  transform={`translate(${h * 1.4},${h * 1.4})`}
+                  opacity={0.3}
+                  transform="translate(2,2)"
                 />
                 <path
                   d={s.d}
-                  fill={colorForRatio(ratio)}
-                  stroke={isSelected ? "#CFA227" : hasData ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.06)"}
-                  strokeWidth={isSelected ? 1.6 : 0.6}
+                  fill={fillColor}
+                  opacity={opacity}
+                  stroke={isSelected ? "#fff" : "rgba(255,255,255,0.2)"}
+                  strokeWidth={isSelected ? 1.5 : 0.5}
                 />
-                {hasData && s.slug !== "labuan" && s.slug !== "putrajaya" && (
+                {hasData && (
                   <text
-                    x={(s as any).centroid?.x ?? 0}
-                    y={(s as any).centroid?.y ?? 0}
+                    x={s.centroid.x}
+                    y={s.centroid.y}
                     textAnchor="middle"
                     dominantBaseline="middle"
                     fontSize={9}
-                    fontWeight={700}
+                    fontWeight={800}
                     fill="#fff"
-                    style={{ pointerEvents: "none", textShadow: "0 1px 3px rgba(0,0,0,0.8)" }}
+                    style={{ pointerEvents: "none", textShadow: "0 1px 3px rgba(0,0,0,0.9)" }}
                   >
                     {s.count}
                   </text>
@@ -217,11 +261,11 @@ export default function PetaPelanggan({ refreshKey }: { refreshKey?: number }) {
             {selected ? selected.name : "Klik satu negeri"}
           </p>
           <p style={{ fontSize: 12, color: "var(--muted)", margin: "3px 0 0" }}>
-            Jumlah pelanggan direkod
+            {selected ? "Jumlah pelanggan direkod" : `Total: ${totalPelanggan} pelanggan`}
           </p>
         </div>
         <div style={{ textAlign: "right" }}>
-          <p style={{ fontSize: 26, fontWeight: 600, color: "#CFA227", margin: 0 }}>
+          <p style={{ fontSize: 26, fontWeight: 600, color: selected ? STATE_COLORS[selected.slug] : "var(--muted)", margin: 0 }}>
             {selected ? selected.count : "-"}
           </p>
           <p style={{ fontSize: 11, color: "var(--muted)", margin: "2px 0 0" }}>pelanggan</p>
