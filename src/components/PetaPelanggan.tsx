@@ -181,10 +181,10 @@ export default function PetaPelanggan({ refreshKey }: { refreshKey?: number }) {
           width: "100%",
           maxWidth: 720,
           aspectRatio: "799.85 / 352.74",
-          background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)",
+          background: "linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)",
           borderRadius: 14,
           padding: "1rem",
-          border: "1px solid rgba(255,255,255,0.08)",
+          border: "1px solid var(--border)",
         }}
       >
         <svg viewBox={`0 0 ${VIEW_W} ${VIEW_H}`} role="img" style={{ width: "100%", height: "100%", display: "block" }}>

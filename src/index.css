@@ -1,18 +1,18 @@
 :root {
-  --bg: #0f172a;
-  --panel: #1e293b;
-  --panel-2: #334155;
-  --text: #e2e8f0;
-  --muted: #94a3b8;
-  --accent: #38bdf8;
-  --green: #22c55e;
-  --red: #ef4444;
-  --border: #334155;
+  --bg: #ffffff;
+  --panel: #f8fafc;
+  --panel-2: #f1f5f9;
+  --text: #1e293b;
+  --muted: #64748b;
+  --accent: #3b82f6;
+  --green: #16a34a;
+  --red: #dc2626;
+  --border: #e2e8f0;
 }
 
-[data-theme="blue"] { --accent: #38bdf8; }
-[data-theme="green"] { --accent: #22c55e; }
-[data-theme="purple"] { --accent: #a855f7; }
+[data-theme="blue"] { --accent: #3b82f6; }
+[data-theme="green"] { --accent: #16a34a; }
+[data-theme="purple"] { --accent: #8b5cf6; }
 [data-theme="amber"] { --accent: #f59e0b; }
 [data-theme="rose"] { --accent: #f43f5e; }
 
@@ -57,8 +57,8 @@ textarea {
 .sidebar {
   position: relative;
   width: 264px;
-  background: linear-gradient(175deg, #131f36 0%, var(--panel) 100%);
-  border-right: 1px solid var(--border);
+  background: linear-gradient(175deg, #0a0a0a 0%, #1a1a1a 100%);
+  border-right: 1px solid #2a2a2a;
   padding: 24px 16px 18px;
   flex-shrink: 0;
   display: flex;
@@ -79,9 +79,9 @@ textarea {
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background: var(--panel-2);
-  border: 1px solid var(--border);
-  color: var(--muted);
+  background: #2a2a2a;
+  border: 1px solid #3a3a3a;
+  color: #9ca3af;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -90,7 +90,7 @@ textarea {
 }
 
 .sidebar-collapse-btn:hover {
-  color: var(--accent);
+  color: #ffffff;
   border-color: var(--accent);
 }
 
@@ -110,7 +110,7 @@ textarea {
   font-weight: 600;
   letter-spacing: 0.2px;
   margin: 4px 0 24px 6px;
-  color: var(--text);
+  color: #ffffff;
   display: flex;
   align-items: center;
   gap: 11px;
@@ -135,7 +135,7 @@ textarea {
   font-weight: 600;
   letter-spacing: 1.4px;
   text-transform: uppercase;
-  color: var(--muted);
+  color: #6b7280;
   opacity: 0.7;
   margin: 4px 0 10px 14px;
   white-space: nowrap;
@@ -161,7 +161,7 @@ textarea {
   gap: 12px;
   padding: 11px 14px;
   border-radius: 10px;
-  color: var(--muted);
+  color: #9ca3af;
   font-family: "Sora", sans-serif;
   font-weight: 500;
   font-size: 14px;
@@ -184,13 +184,13 @@ textarea {
 }
 
 .sidebar a:hover {
-  background: var(--panel-2);
-  color: var(--text);
+  background: #2a2a2a;
+  color: #ffffff;
 }
 
 .sidebar a.active {
-  background: rgba(56, 189, 248, 0.12);
-  color: var(--text);
+  background: rgba(59, 130, 246, 0.15);
+  color: #ffffff;
   font-weight: 600;
 }
 
@@ -224,7 +224,7 @@ textarea {
 .sidebar-foot {
   margin-top: 16px;
   padding-top: 14px;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid #2a2a2a;
 }
 
 .sidebar-user {
@@ -241,7 +241,7 @@ textarea {
   height: 30px;
   border-radius: 50%;
   background: linear-gradient(135deg, var(--accent), #1d4ed8);
-  color: #03263a;
+  color: #fff;
   font-family: "Sora", sans-serif;
   font-size: 11.5px;
   font-weight: 700;
@@ -252,7 +252,7 @@ textarea {
 
 .user-email {
   font-size: 12px;
-  color: var(--muted);
+  color: #9ca3af;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -271,9 +271,9 @@ textarea {
   gap: 12px;
   padding: 10px 14px;
   background: transparent;
-  border: 1px solid var(--border);
+  border: 1px solid #2a2a2a;
   border-radius: 10px;
-  color: var(--muted);
+  color: #9ca3af;
   font-family: "Sora", sans-serif;
   font-size: 13.5px;
   font-weight: 500;
@@ -285,7 +285,7 @@ textarea {
 .sidebar-logout-btn:hover {
   border-color: var(--red);
   color: var(--red);
-  background: rgba(239, 68, 68, 0.08);
+  background: rgba(220, 38, 38, 0.08);
 }
 
 .content {
@@ -308,14 +308,14 @@ textarea {
   position: sticky;
   top: 0;
   z-index: 30;
-  background: linear-gradient(175deg, #131f36 0%, var(--panel) 100%);
-  border-bottom: 1px solid var(--border);
+  background: linear-gradient(175deg, #0a0a0a 0%, #1a1a1a 100%);
+  border-bottom: 1px solid #2a2a2a;
   padding: 10px 14px;
 }
 .mobile-menu-btn {
-  background: var(--panel-2);
-  border: 1px solid var(--border);
-  color: var(--text);
+  background: #2a2a2a;
+  border: 1px solid #3a3a3a;
+  color: #ffffff;
   border-radius: 10px;
   width: 40px;
   height: 40px;
@@ -331,7 +331,7 @@ textarea {
   font-family: "Fraunces", Georgia, serif;
   font-size: 16px;
   font-weight: 600;
-  color: var(--text);
+  color: #ffffff;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -459,7 +459,7 @@ textarea {
 
 .btn {
   background: var(--accent);
-  color: #03263a;
+  color: #ffffff;
   border: none;
   border-radius: 8px;
   padding: 9px 16px;
@@ -630,7 +630,7 @@ textarea {
 
 .prod-opt:hover {
   background: var(--accent);
-  color: #03263a;
+  color: #ffffff;
 }
 
 .panel-chart {
@@ -885,9 +885,9 @@ textarea {
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    background: var(--panel-2);
-    border: 1px solid var(--border);
-    color: var(--muted);
+    background: #2a2a2a;
+    border: 1px solid #3a3a3a;
+    color: #9ca3af;
   }
 
   .brand {
@@ -1102,19 +1102,19 @@ textarea {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(circle at top, #1e293b, var(--bg));
+  background: radial-gradient(circle at top, #f1f5f9, #ffffff);
   padding: 20px;
 }
 
 .login-card {
   width: 380px;
   max-width: 92vw;
-  background: var(--panel);
+  background: #ffffff;
   border: 1px solid var(--border);
   border-radius: 16px;
   padding: 30px 26px;
   text-align: center;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
 }
 
 .login-logo {

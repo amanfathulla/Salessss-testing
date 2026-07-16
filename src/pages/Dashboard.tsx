@@ -226,22 +226,22 @@ function Chart({ months, maxVal }: { months: MonthAgg[]; maxVal: number }) {
   const bw = innerW / months.length, barW = bw * 0.32;
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="chart" preserveAspectRatio="xMidYMid meet">
-      {[0, 0.25, 0.5, 0.75, 1].map((g) => {
-        const y = pad + innerH * (1 - g);
-        return <line key={g} x1={pad} x2={W - pad} y1={y} y2={y} stroke="#334155" strokeWidth={1} />;
-      })}
-      {months.map((m, i) => {
-        const x = pad + i * bw + bw / 2;
-        const hJ = (m.jualan / maxVal) * innerH, hU = (m.untung / maxVal) * innerH;
-        const yJ = pad + innerH - hJ, yU = pad + innerH - hU;
-        return (
-          <g key={i}>
-            <rect x={x - barW - 1} y={yJ} width={barW} height={hJ} fill="var(--accent)" rx={3} />
-            <rect x={x + 1} y={yU} width={barW} height={hU} fill="var(--green)" rx={3} />
-            <text x={x} y={H - 10} fontSize={11} fill="#94a3b8" textAnchor="middle">{m.label}</text>
-          </g>
-        );
-      })}
-    </svg>
+    {[0, 0.25, 0.5, 0.75, 1].map((g) => {
+      const y = pad + innerH * (1 - g);
+      return <line key={g} x1={pad} x2={W - pad} y1={y} y2={y} stroke="#e2e8f0" strokeWidth={1} />;
+    })}
+    {months.map((m, i) => {
+      const x = pad + i * bw + bw / 2;
+      const hJ = (m.jualan / maxVal) * innerH, hU = (m.untung / maxVal) * innerH;
+      const yJ = pad + innerH - hJ, yU = pad + innerH - hU;
+      return (
+        <g key={i}>
+          <rect x={x - barW - 1} y={yJ} width={barW} height={hJ} fill="var(--accent)" rx={3} />
+          <rect x={x + 1} y={yU} width={barW} height={hU} fill="var(--green)" rx={3} />
+          <text x={x} y={H - 10} fontSize={11} fill="#64748b" textAnchor="middle">{m.label}</text>
+        </g>
+      );
+    })}
+  </svg>
   );
 }
