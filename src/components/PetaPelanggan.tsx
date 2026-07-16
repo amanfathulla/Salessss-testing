@@ -149,12 +149,12 @@ export default function PetaPelanggan({ refreshKey }: { refreshKey?: number }) {
   }
 
   return (
-    <div style={{ background: "#0C0E11", borderRadius: 12, padding: "1.5rem" }}>
+    <div>
       <div
         style={{
           margin: "0 auto",
           width: "100%",
-          maxWidth: 760,
+          maxWidth: 720,
           aspectRatio: "799.85 / 352.74",
         }}
       >
@@ -164,6 +164,7 @@ export default function PetaPelanggan({ refreshKey }: { refreshKey?: number }) {
             const ratio = s.count / maxCount;
             const h = 3 + ratio * 14;
             const isSelected = selected?.slug === s.slug;
+            const hasData = s.count > 0;
             return (
               <g
                 key={s.slug}
@@ -179,9 +180,23 @@ export default function PetaPelanggan({ refreshKey }: { refreshKey?: number }) {
                 <path
                   d={s.d}
                   fill={colorForRatio(ratio)}
-                  stroke={isSelected ? "#CFA227" : "#0C0E11"}
+                  stroke={isSelected ? "#CFA227" : hasData ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.06)"}
                   strokeWidth={isSelected ? 1.6 : 0.6}
                 />
+                {hasData && s.slug !== "labuan" && s.slug !== "putrajaya" && (
+                  <text
+                    x={(s as any).centroid?.x ?? 0}
+                    y={(s as any).centroid?.y ?? 0}
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    fontSize={9}
+                    fontWeight={700}
+                    fill="#fff"
+                    style={{ pointerEvents: "none", textShadow: "0 1px 3px rgba(0,0,0,0.8)" }}
+                  >
+                    {s.count}
+                  </text>
+                )}
               </g>
             );
           })}
@@ -190,44 +205,26 @@ export default function PetaPelanggan({ refreshKey }: { refreshKey?: number }) {
 
       <div
         style={{
-          marginTop: "1rem",
-          background: "var(--panel)",
-          border: "0.5px solid #3C3489",
-          borderRadius: 12,
-          padding: "1rem 1.25rem",
+          marginTop: "0.75rem",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
+          padding: "0 0.5rem",
         }}
       >
         <div>
-          <p
-            style={{
-              fontSize: 18,
-              letterSpacing: 0.5,
-              color: "#F1EFE8",
-              margin: 0,
-              fontWeight: 600,
-            }}
-          >
+          <p style={{ fontSize: 16, color: "var(--text)", margin: 0, fontWeight: 600 }}>
             {selected ? selected.name : "Klik satu negeri"}
           </p>
-          <p style={{ fontSize: 13, color: "var(--muted)", margin: "4px 0 0" }}>
+          <p style={{ fontSize: 12, color: "var(--muted)", margin: "3px 0 0" }}>
             Jumlah pelanggan direkod
           </p>
         </div>
         <div style={{ textAlign: "right" }}>
-          <p
-            style={{
-              fontSize: 28,
-              fontWeight: 500,
-              color: "#CFA227",
-              margin: 0,
-            }}
-          >
+          <p style={{ fontSize: 26, fontWeight: 600, color: "#CFA227", margin: 0 }}>
             {selected ? selected.count : "-"}
           </p>
-          <p style={{ fontSize: 12, color: "var(--muted)", margin: "2px 0 0" }}>pelanggan</p>
+          <p style={{ fontSize: 11, color: "var(--muted)", margin: "2px 0 0" }}>pelanggan</p>
         </div>
       </div>
     </div>

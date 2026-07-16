@@ -504,7 +504,13 @@ export default function PelangganPage() {
       )}
 
       <div className="negeri-layout">
-        {/* 5 Teratas di SEBELAH KIRI */}
+        {/* Peta di SEBELAH KIRI */}
+        <div>
+          <h3 style={{ marginTop: 0, marginBottom: 12 }}>Peta Pelanggan ikut Negeri</h3>
+          <PetaPelanggan refreshKey={mapKey} />
+        </div>
+
+        {/* 5 Teratas di SEBELAH KANAN */}
         <div className="top-negeri">
           <h3 style={{ marginTop: 0 }}>5 Teratas (Order)</h3>
           {loading ? (
@@ -520,12 +526,6 @@ export default function PelangganPage() {
               </div>
             ))
           )}
-        </div>
-
-        {/* Peta di SEBELAH KANAN */}
-        <div>
-          <h3 style={{ marginTop: 0, marginBottom: 12 }}>Peta Pelanggan ikut Negeri</h3>
-          <PetaPelanggan refreshKey={mapKey} />
         </div>
       </div>
 

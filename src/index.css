@@ -1359,7 +1359,7 @@ textarea {
 
 .negeri-layout {
   display: grid;
-  grid-template-columns: 240px 1fr;
+  grid-template-columns: 1fr 240px;
   gap: 20px;
   align-items: start;
   margin-bottom: 24px;
@@ -1398,10 +1398,9 @@ textarea {
   display: inline-block;
 }
 .top-negeri {
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 16px;
+  background: transparent;
+  border: none;
+  padding: 0;
 }
 .top-negeri h3 {
   margin: 0 0 12px;
