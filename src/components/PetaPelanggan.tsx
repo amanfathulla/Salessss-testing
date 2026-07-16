@@ -6,7 +6,6 @@ import { supabase, isConfigured } from "../lib/supabase";
 // Case-insensitive lookup: negeri name (any case) -> krackedmaps slug
 // ---------------------------------------------------------------------------
 const LOKASI_MAP: Record<string, string> = {
-  // exact + common variants, all lowercase keys
   johor: "johor",
   kedah: "kedah",
   kelantan: "kelantan",
@@ -17,7 +16,7 @@ const LOKASI_MAP: Record<string, string> = {
   pahang: "pahang",
   "pulau pinang": "penang",
   penang: "penang",
-  "pinang": "penang",
+  pinang: "penang",
   perak: "perak",
   perlis: "perlis",
   sabah: "sabah",
@@ -39,9 +38,7 @@ const LOKASI_MAP: Record<string, string> = {
 
 function lokasiToSlug(raw: string): string | null {
   const key = raw.trim().toLowerCase();
-  // try exact match
   if (LOKASI_MAP[key]) return LOKASI_MAP[key];
-  // try without "wilayah persekutuan" prefix
   if (key.startsWith("wilayah persekutuan ")) {
     const sub = key.slice(20);
     if (LOKASI_MAP[sub]) return LOKASI_MAP[sub];
@@ -49,7 +46,6 @@ function lokasiToSlug(raw: string): string | null {
     if (sub.includes("putrajaya")) return "putrajaya";
     if (sub.includes("labuan")) return "labuan";
   }
-  // try partial match for pulau pinang
   if (key.includes("pinang") || key.includes("penang")) return "penang";
   return null;
 }
@@ -73,7 +69,7 @@ const SLUG_TO_NAME: Record<string, string> = {
   labuan: "Labuan",
 };
 
-// 16 unique colors — satu per negeri, meriah
+// 16 unique colors — satu per negeri
 const STATE_COLORS: Record<string, string> = {
   johor: "#e63946",
   kedah: "#f4a261",
@@ -92,8 +88,6 @@ const STATE_COLORS: Record<string, string> = {
   putrajaya: "#a78bfa",
   labuan: "#22c55e",
 };
-
-const NO_DATA_COLOR = "#1a2332";
 
 interface ProjectedState {
   slug: string;
@@ -118,24 +112,19 @@ export default function PetaPelanggan({ refreshKey }: { refreshKey?: number }) {
     async function fetchCounts() {
       setLoading(true);
       setError(null);
-
       if (!isConfigured) {
         setLoading(false);
         return;
       }
-
       const { data: rows, error: err } = await supabase
         .from("pelanggan")
         .select("lokasi");
-
       if (cancelled) return;
-
       if (err) {
         setError(err.message);
         setLoading(false);
         return;
       }
-
       const tally: Record<string, number> = {};
       for (const row of rows ?? []) {
         const raw = (row as { lokasi: string | null }).lokasi;
@@ -144,31 +133,25 @@ export default function PetaPelanggan({ refreshKey }: { refreshKey?: number }) {
         if (!slug) continue;
         tally[slug] = (tally[slug] ?? 0) + 1;
       }
-
       setCounts(tally);
       setLoading(false);
     }
 
     fetchCounts();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [refreshKey]);
 
   const states = useMemo(() => (data as any).STATES as any[], []);
 
   const projectedStates: ProjectedState[] = useMemo(
     () =>
-      states.map((f) => {
-        const slug = f.slug as string;
-        return {
-          slug,
-          name: SLUG_TO_NAME[slug] ?? f.name,
-          d: f.d as string,
-          count: counts[slug] ?? 0,
-          centroid: f.centroid ?? { x: 0, y: 0 },
-        };
-      }),
+      states.map((f) => ({
+        slug: f.slug as string,
+        name: SLUG_TO_NAME[f.slug] ?? f.name,
+        d: f.d as string,
+        count: counts[f.slug] ?? 0,
+        centroid: f.centroid ?? { x: 0, y: 0 },
+      })),
     [states, counts]
   );
 
@@ -198,49 +181,40 @@ export default function PetaPelanggan({ refreshKey }: { refreshKey?: number }) {
           width: "100%",
           maxWidth: 720,
           aspectRatio: "799.85 / 352.74",
+          background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)",
+          borderRadius: 14,
+          padding: "1rem",
+          border: "1px solid rgba(255,255,255,0.08)",
         }}
       >
         <svg viewBox={`0 0 ${VIEW_W} ${VIEW_H}`} role="img" style={{ width: "100%", height: "100%", display: "block" }}>
           <title>Peta jumlah pelanggan ikut negeri</title>
           {projectedStates.map((s) => {
             const hasData = s.count > 0;
-            const baseColor = STATE_COLORS[s.slug] ?? "#555";
-            const fillColor = hasData ? baseColor : NO_DATA_COLOR;
+            const baseColor = STATE_COLORS[s.slug] ?? "#6b7280";
             const isSelected = selected?.slug === s.slug;
-            const opacity = hasData ? 1 : 0.4;
             return (
               <g
                 key={s.slug}
-                style={{ cursor: "pointer" }}
+                style={{ cursor: "pointer", transition: "opacity 0.15s ease" }}
                 onClick={() => setSelected(s)}
               >
+                {/* shadow */}
                 <path
                   d={s.d}
                   fill="#000000"
-                  opacity={0.3}
-                  transform="translate(2,2)"
+                  opacity={0.25}
+                  transform="translate(1.5,1.5)"
                 />
+                {/* state shape */}
                 <path
                   d={s.d}
-                  fill={fillColor}
-                  opacity={opacity}
-                  stroke={isSelected ? "#fff" : "rgba(255,255,255,0.2)"}
-                  strokeWidth={isSelected ? 1.5 : 0.5}
+                  fill={baseColor}
+                  opacity={hasData ? 0.9 : 0.3}
+                  stroke={isSelected ? "#fff" : "rgba(255,255,255,0.35)"}
+                  strokeWidth={isSelected ? 1.8 : 0.8}
+                  style={{ transition: "opacity 0.15s ease" }}
                 />
-                {hasData && (
-                  <text
-                    x={s.centroid.x}
-                    y={s.centroid.y}
-                    textAnchor="middle"
-                    dominantBaseline="middle"
-                    fontSize={9}
-                    fontWeight={800}
-                    fill="#fff"
-                    style={{ pointerEvents: "none", textShadow: "0 1px 3px rgba(0,0,0,0.9)" }}
-                  >
-                    {s.count}
-                  </text>
-                )}
               </g>
             );
           })}
