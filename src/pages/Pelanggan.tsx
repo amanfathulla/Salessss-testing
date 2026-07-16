@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase, isConfigured } from "../lib/supabase";
 import { NEGERI } from "../lib/banner";
+import PetaPelanggan from "../components/PetaPelanggan";
 import type { Pelanggan, Produk, Pesanan, PesananLengkap, ItemPesanan } from "../types";
 
 type DraftItem = {
@@ -29,6 +30,7 @@ export default function PelangganPage() {
   const [produk, setProduk] = useState<Produk[]>([]);
   const [pesananAll, setPesananAll] = useState<PesananLengkap[]>([]);
   const [negeriAgg, setNegeriAgg] = useState<{ negeri: string; orders: number; jualan: number }[]>([]);
+  const [mapKey, setMapKey] = useState(0); // refresh peta bila data pelanggan berubah
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [showOrder, setShowOrder] = useState(false);
@@ -210,6 +212,7 @@ export default function PelangganPage() {
     setShowEditOrder(false);
     load();
     await refreshPesanan();
+    setMapKey((k) => k + 1);
   }
 
   async function deleteOrder(id: string) {
@@ -218,6 +221,7 @@ export default function PelangganPage() {
     setShowView(false);
     load();
     await refreshPesanan();
+    setMapKey((k) => k + 1);
   }
 
   function onPickProduk(idx: number, produkId: string) {
@@ -334,6 +338,7 @@ export default function PelangganPage() {
     setShowOrder(false);
     alert("Pesanan disimpan! Ia akan muncul di Dashboard & page ini.");
     await refreshPesanan();
+    setMapKey((k) => k + 1);
   }
 
   // simpan pelanggan. elak duplicate nombor telefon: kalau nombor wujud,
@@ -386,6 +391,7 @@ export default function PelangganPage() {
     setShowModal(false);
     load();
     await refreshPesanan();
+    setMapKey((k) => k + 1);
   }
 
   async function hapus(id: string) {
@@ -393,6 +399,7 @@ export default function PelangganPage() {
     setShowView(false);
     await supabase.from("pelanggan").delete().eq("id", id);
     load();
+    setMapKey((k) => k + 1);
   }
 
   const fmt = (n: number) =>
@@ -495,6 +502,9 @@ export default function PelangganPage() {
           <code>VITE_SUPABASE_PUBLISHABLE_KEY</code>, kemudian restart dev server.
         </div>
       )}
+
+      <h3 style={{ marginTop: 4, marginBottom: 12 }}>Peta Pelanggan ikut Negeri</h3>
+      <PetaPelanggan refreshKey={mapKey} />
 
       <div className="negeri-layout">
         {loading ? (
