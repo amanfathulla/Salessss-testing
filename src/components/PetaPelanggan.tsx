@@ -149,34 +149,43 @@ export default function PetaPelanggan({ refreshKey }: { refreshKey?: number }) {
 
   return (
     <div style={{ background: "#0C0E11", borderRadius: 12, padding: "1.5rem" }}>
-      <svg viewBox={`0 0 ${VIEW_W} ${VIEW_H}`} role="img" style={{ width: "100%", height: "auto" }}>
-        <title>Peta jumlah pelanggan ikut negeri</title>
-        {projectedStates.map((s) => {
-          const ratio = s.count / maxCount;
-          const h = 3 + ratio * 14;
-          const isSelected = selected?.slug === s.slug;
-          return (
-            <g
-              key={s.slug}
-              style={{ cursor: "pointer" }}
-              onClick={() => setSelected(s)}
-            >
-              <path
-                d={s.d}
-                fill="#000000"
-                opacity={0.35}
-                transform={`translate(${h * 1.4},${h * 1.4})`}
-              />
-              <path
-                d={s.d}
-                fill={colorForRatio(ratio)}
-                stroke={isSelected ? "#CFA227" : "#0C0E11"}
-                strokeWidth={isSelected ? 1.6 : 0.6}
-              />
-            </g>
-          );
-        })}
-      </svg>
+      <div
+        style={{
+          maxWidth: 520,
+          margin: "0 auto",
+          width: "100%",
+          aspectRatio: "420 / 400",
+        }}
+      >
+        <svg viewBox={`0 0 ${VIEW_W} ${VIEW_H}`} role="img" style={{ width: "100%", height: "100%", display: "block" }}>
+          <title>Peta jumlah pelanggan ikut negeri</title>
+          {projectedStates.map((s) => {
+            const ratio = s.count / maxCount;
+            const h = 3 + ratio * 14;
+            const isSelected = selected?.slug === s.slug;
+            return (
+              <g
+                key={s.slug}
+                style={{ cursor: "pointer" }}
+                onClick={() => setSelected(s)}
+              >
+                <path
+                  d={s.d}
+                  fill="#000000"
+                  opacity={0.35}
+                  transform={`translate(${h * 1.4},${h * 1.4})`}
+                />
+                <path
+                  d={s.d}
+                  fill={colorForRatio(ratio)}
+                  stroke={isSelected ? "#CFA227" : "#0C0E11"}
+                  strokeWidth={isSelected ? 1.6 : 0.6}
+                />
+              </g>
+            );
+          })}
+        </svg>
+      </div>
 
       <div
         style={{

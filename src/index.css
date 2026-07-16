@@ -955,6 +955,7 @@ textarea {
   }
   .negeri-layout {
     grid-template-columns: 1fr;
+    display: none; /* mobile: buang pie negeri, peta jadi fokus utama */
   }
   .settings-grid {
     grid-template-columns: 1fr;
