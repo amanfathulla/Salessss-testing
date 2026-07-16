@@ -503,27 +503,29 @@ export default function PelangganPage() {
         </div>
       )}
 
-      <h3 style={{ marginTop: 4, marginBottom: 12 }}>Peta Pelanggan ikut Negeri</h3>
-      <PetaPelanggan refreshKey={mapKey} />
-
       <div className="negeri-layout">
-        {loading ? (
-          <p className="muted">Memuatkan graf…</p>
-        ) : negeriAgg.length === 0 ? (
-          <div className="empty">Tiada data negeri. Pastikan pelanggan ada lokasi negeri & pesanan.</div>
-        ) : (
-          <NegeriPie data={negeriAgg} />
-        )}
-
+        {/* 5 Teratas di SEBELAH KIRI */}
         <div className="top-negeri">
-          <h3>5 Teratas (Order)</h3>
-          {negeriAgg.slice(0, 5).map((n, i) => (
-            <div className="top-row" key={n.negeri}>
-              <span className="top-rank">{i + 1}</span>
-              <span className="top-name">{n.negeri}</span>
-              <span className="top-val">{n.orders} order</span>
-            </div>
-          ))}
+          <h3 style={{ marginTop: 0 }}>5 Teratas (Order)</h3>
+          {loading ? (
+            <p className="muted">Memuatkan…</p>
+          ) : negeriAgg.length === 0 ? (
+            <div className="empty">Tiada data negeri.</div>
+          ) : (
+            negeriAgg.slice(0, 5).map((n, i) => (
+              <div className="top-row" key={n.negeri}>
+                <span className="top-rank">{i + 1}</span>
+                <span className="top-name">{n.negeri}</span>
+                <span className="top-val">{n.orders} order</span>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Peta di SEBELAH KANAN */}
+        <div>
+          <h3 style={{ marginTop: 0, marginBottom: 12 }}>Peta Pelanggan ikut Negeri</h3>
+          <PetaPelanggan refreshKey={mapKey} />
         </div>
       </div>
 
@@ -812,57 +814,4 @@ export default function PelangganPage() {
   );
 }
 
-const NEGERI_COLORS = [
-  "#38bdf8", "#a855f7", "#22c55e", "#f59e0b", "#ef4444",
-  "#06b6d4", "#ec4899", "#84cc16", "#f97316", "#6366f1",
-  "#14b8a6", "#eab308", "#d946ef", "#0ea5e9",
-];
-
-function NegeriPie({ data }: { data: { negeri: string; orders: number; jualan: number }[] }) {
-  const total = data.reduce((s, d) => s + d.orders, 0) || 1;
-  let acc = 0;
-  const R = 80, C = 100, circ = 2 * Math.PI * R;
-  return (
-    <div className="negeri-pie-wrap">
-      <svg viewBox="0 0 200 200" className="negeri-pie">
-        {data.map((d, i) => {
-          const frac = d.orders / total;
-          const dash = frac * circ;
-          const el = (
-            <circle
-              key={d.negeri}
-              cx={C}
-              cy={C}
-              r={R}
-              fill="none"
-              stroke={NEGERI_COLORS[i % NEGERI_COLORS.length]}
-              strokeWidth={36}
-              strokeDasharray={`${dash} ${circ - dash}`}
-              strokeDashoffset={-acc * circ}
-              transform="rotate(-90 100 100)"
-            />
-          );
-          acc += frac;
-          return el;
-        })}
-        <text x={C} y={C - 4} textAnchor="middle" fontSize={20} fill="#e2e8f0" fontWeight={700}>
-          {total}
-        </text>
-        <text x={C} y={C + 16} textAnchor="middle" fontSize={12} fill="#94a3b8">
-          orders
-        </text>
-      </svg>
-      <div className="negeri-legend">
-        {data.map((d, i) => (
-          <div className="negeri-leg" key={d.negeri}>
-            <span
-              className="swatch"
-              style={{ background: NEGERI_COLORS[i % NEGERI_COLORS.length] }}
-            />
-            {d.negeri} ({d.orders})
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
+// NegeriPie dibuang — hanya peta & 5 teratas digunakan sekarang.

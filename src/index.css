@@ -955,7 +955,6 @@ textarea {
   }
   .negeri-layout {
     grid-template-columns: 1fr;
-    display: none; /* mobile: buang pie negeri, peta jadi fokus utama */
   }
   .settings-grid {
     grid-template-columns: 1fr;
@@ -1360,7 +1359,7 @@ textarea {
 
 .negeri-layout {
   display: grid;
-  grid-template-columns: 1fr 280px;
+  grid-template-columns: 240px 1fr;
   gap: 20px;
   align-items: start;
   margin-bottom: 24px;

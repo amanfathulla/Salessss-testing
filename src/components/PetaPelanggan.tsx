@@ -61,8 +61,9 @@ function colorForRatio(t: number): string {
   return "#CFA227";
 }
 
-const VIEW_W = 420;
-const VIEW_H = 400;
+// Gunakan viewBox sebenar dari krackedmaps PROJECTION (viewW/viewH)
+const VIEW_W = 799.85;
+const VIEW_H = 352.74;
 
 export default function PetaPelanggan({ refreshKey }: { refreshKey?: number }) {
   const [counts, setCounts] = useState<Record<string, number>>({});
@@ -151,10 +152,10 @@ export default function PetaPelanggan({ refreshKey }: { refreshKey?: number }) {
     <div style={{ background: "#0C0E11", borderRadius: 12, padding: "1.5rem" }}>
       <div
         style={{
-          maxWidth: 520,
           margin: "0 auto",
           width: "100%",
-          aspectRatio: "420 / 400",
+          maxWidth: 760,
+          aspectRatio: "799.85 / 352.74",
         }}
       >
         <svg viewBox={`0 0 ${VIEW_W} ${VIEW_H}`} role="img" style={{ width: "100%", height: "100%", display: "block" }}>
