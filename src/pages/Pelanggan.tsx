@@ -25,6 +25,17 @@ const BLANK_ITEMS: DraftItem[] = [
   { produk_id: null, nama_produk: "", kuantiti: 1, harga_satuan: 0, kos_satuan: 0 },
 ];
 
+// Lightweight lookup: negeri name -> slug (untuk hover highlight pada peta)
+const LOKASI_TO_SLUG_LIGHT: Record<string, string> = {
+  "Johor": "johor", "Kedah": "kedah", "Kelantan": "kelantan",
+  "Melaka": "melaka", "Negeri Sembilan": "negeri-sembilan",
+  "Pahang": "pahang", "Pulau Pinang": "penang", "Perak": "perak",
+  "Perlis": "perlis", "Sabah": "sabah", "Sarawak": "sarawak",
+  "Selangor": "selangor", "Terengganu": "terengganu",
+  "Wilayah Persekutuan": "kuala-lumpur", "Kuala Lumpur": "kuala-lumpur",
+  "Putrajaya": "putrajaya", "Labuan": "labuan",
+};
+
 export default function PelangganPage() {
   const [rows, setRows] = useState<Pelanggan[]>([]);
   const [produk, setProduk] = useState<Produk[]>([]);
@@ -50,6 +61,9 @@ export default function PelangganPage() {
   const [searchResult, setSearchResult] = useState<Pelanggan | null>(null);
   const [searchMsg, setSearchMsg] = useState<string | null>(null);
   const [searchDup, setSearchDup] = useState(false);
+
+  // hover highlight untuk 5 Teratas -> peta
+  const [highlightNegeri, setHighlightNegeri] = useState<string | null>(null);
 
   const [items, setItems] = useState<DraftItem[]>(BLANK_ITEMS);
 
@@ -507,7 +521,7 @@ export default function PelangganPage() {
         {/* Peta di SEBELAH KIRI */}
         <div>
           <h3 style={{ marginTop: 0, marginBottom: 12 }}>Peta Pelanggan ikut Negeri</h3>
-          <PetaPelanggan refreshKey={mapKey} />
+          <PetaPelanggan refreshKey={mapKey} highlightSlug={highlightNegeri} />
         </div>
 
         {/* 5 Teratas di SEBELAH KANAN */}
@@ -519,7 +533,13 @@ export default function PelangganPage() {
             <div className="empty">Tiada data negeri.</div>
           ) : (
             negeriAgg.slice(0, 5).map((n, i) => (
-              <div className="top-row" key={n.negeri}>
+              <div
+                className="top-row"
+                key={n.negeri}
+                onMouseEnter={() => setHighlightNegeri(LOKASI_TO_SLUG_LIGHT[n.negeri] ?? null)}
+                onMouseLeave={() => setHighlightNegeri(null)}
+                style={{ cursor: "pointer" }}
+              >
                 <span className="top-rank">{i + 1}</span>
                 <span className="top-name">{n.negeri}</span>
                 <span className="top-val">{n.orders} order</span>

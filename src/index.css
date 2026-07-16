@@ -444,6 +444,7 @@ textarea {
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 18px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
 }
 
 .card .label {
@@ -486,6 +487,7 @@ textarea {
   background: var(--panel);
   border-radius: 12px;
   overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
 }
 
 .table th,
@@ -533,6 +535,7 @@ textarea {
   max-width: 92vw;
   max-height: 90vh;
   overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.15);
 }
 
 .modal h3 {
@@ -639,6 +642,7 @@ textarea {
   border-radius: 14px;
   padding: 18px 18px 10px;
   margin-bottom: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
 }
 
 .chart {
@@ -683,11 +687,13 @@ textarea {
   padding: 14px 16px;
   text-align: left;
   color: var(--text);
-  transition: border-color 0.15s ease, background 0.15s ease;
+  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
 }
 .list-row:hover {
   border-color: var(--accent);
   background: var(--panel-2);
+  box-shadow: 0 4px 12px rgba(59,130,246,0.12);
 }
 .list-row-main {
   display: flex;
@@ -808,6 +814,7 @@ textarea {
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 14px 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
 }
 
 .recent-date {
@@ -1163,10 +1170,12 @@ textarea {
   border: 1px solid var(--border);
   border-radius: 16px;
   padding: 22px;
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
 }
 .panel-box:hover {
   border-color: var(--accent);
+  box-shadow: 0 4px 16px rgba(59,130,246,0.12);
 }
 
 .panel-box h3 {
@@ -1413,6 +1422,13 @@ textarea {
   gap: 8px;
   padding: 8px 0;
   border-bottom: 1px solid var(--border);
+  transition: background 0.15s ease, padding 0.15s ease;
+  border-radius: 8px;
+}
+.top-row:hover {
+  background: var(--panel-2);
+  padding-left: 8px;
+  padding-right: 8px;
 }
 .top-row:last-child {
   border-bottom: none;

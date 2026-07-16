@@ -3,37 +3,24 @@ import { data } from "krackedmaps";
 import { supabase, isConfigured } from "../lib/supabase";
 
 // ---------------------------------------------------------------------------
-// Case-insensitive lookup: negeri name (any case) -> krackedmaps slug
+// Case-insensitive lookup
 // ---------------------------------------------------------------------------
 const LOKASI_MAP: Record<string, string> = {
-  johor: "johor",
-  kedah: "kedah",
-  kelantan: "kelantan",
-  melaka: "melaka",
-  melacca: "melaka",
-  "negeri sembilan": "negeri-sembilan",
-  ns: "negeri-sembilan",
+  johor: "johor", kedah: "kedah", kelantan: "kelantan",
+  melaka: "melaka", melacca: "melaka",
+  "negeri sembilan": "negeri-sembilan", ns: "negeri-sembilan",
   pahang: "pahang",
-  "pulau pinang": "penang",
-  penang: "penang",
-  pinang: "penang",
-  perak: "perak",
-  perlis: "perlis",
-  sabah: "sabah",
-  sarawak: "sarawak",
-  selangor: "selangor",
-  terengganu: "terengganu",
-  trengganu: "terengganu",
+  "pulau pinang": "penang", penang: "penang", pinang: "penang",
+  perak: "perak", perlis: "perlis",
+  sabah: "sabah", sarawak: "sarawak", selangor: "selangor",
+  terengganu: "terengganu", trengganu: "terengganu",
   "wilayah persekutuan": "kuala-lumpur",
   "wilayah persekutuan kuala lumpur": "kuala-lumpur",
   "wilayah persekutuan putrajaya": "putrajaya",
   "wilayah persekutuan labuan": "labuan",
-  wp: "kuala-lumpur",
-  "w.p": "kuala-lumpur",
-  "kuala lumpur": "kuala-lumpur",
-  kl: "kuala-lumpur",
-  putrajaya: "putrajaya",
-  labuan: "labuan",
+  wp: "kuala-lumpur", "w.p": "kuala-lumpur",
+  "kuala lumpur": "kuala-lumpur", kl: "kuala-lumpur",
+  putrajaya: "putrajaya", labuan: "labuan",
 };
 
 function lokasiToSlug(raw: string): string | null {
@@ -51,43 +38,20 @@ function lokasiToSlug(raw: string): string | null {
 }
 
 const SLUG_TO_NAME: Record<string, string> = {
-  johor: "Johor",
-  kedah: "Kedah",
-  kelantan: "Kelantan",
-  melaka: "Melaka",
-  "negeri-sembilan": "Negeri Sembilan",
-  pahang: "Pahang",
-  penang: "Pulau Pinang",
-  perak: "Perak",
-  perlis: "Perlis",
-  sabah: "Sabah",
-  sarawak: "Sarawak",
-  selangor: "Selangor",
-  terengganu: "Terengganu",
-  "kuala-lumpur": "Kuala Lumpur",
-  putrajaya: "Putrajaya",
-  labuan: "Labuan",
+  johor: "Johor", kedah: "Kedah", kelantan: "Kelantan",
+  melaka: "Melaka", "negeri-sembilan": "Negeri Sembilan",
+  pahang: "Pahang", penang: "Pulau Pinang", perak: "Perak",
+  perlis: "Perlis", sabah: "Sabah", sarawak: "Sarawak",
+  selangor: "Selangor", terengganu: "Terengganu",
+  "kuala-lumpur": "Kuala Lumpur", putrajaya: "Putrajaya", labuan: "Labuan",
 };
 
-// 16 unique colors — satu per negeri
-const STATE_COLORS: Record<string, string> = {
-  johor: "#e63946",
-  kedah: "#f4a261",
-  kelantan: "#2a9d8f",
-  melaka: "#e9c46a",
-  "negeri-sembilan": "#457b9d",
-  pahang: "#a855f7",
-  penang: "#06b6d4",
-  perak: "#84cc16",
-  perlis: "#f97316",
-  sabah: "#ec4899",
-  sarawak: "#14b8a6",
-  selangor: "#3b82f6",
-  terengganu: "#ef4444",
-  "kuala-lumpur": "#fbbf24",
-  putrajaya: "#a78bfa",
-  labuan: "#22c55e",
-};
+// 3 warna sahaja — clean
+function colorForCount(count: number): string {
+  if (count === 0) return "#e2e8f0";   // gray — tiada data
+  if (count <= 2) return "#93c5fd";   // light blue — sikit
+  return "#3b82f6";                    // blue — ramai
+}
 
 interface ProjectedState {
   slug: string;
@@ -100,31 +64,29 @@ interface ProjectedState {
 const VIEW_W = 799.85;
 const VIEW_H = 352.74;
 
-export default function PetaPelanggan({ refreshKey }: { refreshKey?: number }) {
+export default function PetaPelanggan({
+  refreshKey,
+  highlightSlug,
+}: {
+  refreshKey?: number;
+  highlightSlug?: string | null;
+}) {
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selected, setSelected] = useState<ProjectedState | null>(null);
+  const [hovered, setHovered] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-
     async function fetchCounts() {
       setLoading(true);
       setError(null);
-      if (!isConfigured) {
-        setLoading(false);
-        return;
-      }
+      if (!isConfigured) { setLoading(false); return; }
       const { data: rows, error: err } = await supabase
         .from("pelanggan")
         .select("lokasi");
       if (cancelled) return;
-      if (err) {
-        setError(err.message);
-        setLoading(false);
-        return;
-      }
+      if (err) { setError(err.message); setLoading(false); return; }
       const tally: Record<string, number> = {};
       for (const row of rows ?? []) {
         const raw = (row as { lokasi: string | null }).lokasi;
@@ -136,7 +98,6 @@ export default function PetaPelanggan({ refreshKey }: { refreshKey?: number }) {
       setCounts(tally);
       setLoading(false);
     }
-
     fetchCounts();
     return () => { cancelled = true; };
   }, [refreshKey]);
@@ -156,6 +117,10 @@ export default function PetaPelanggan({ refreshKey }: { refreshKey?: number }) {
   );
 
   const totalPelanggan = projectedStates.reduce((s, st) => s + st.count, 0);
+
+  // active = hovered on peta OR hovered from 5 Teratas
+  const activeSlug = hovered ?? highlightSlug ?? null;
+  const activeState = activeSlug ? projectedStates.find((s) => s.slug === activeSlug) : null;
 
   if (loading) {
     return (
@@ -177,45 +142,33 @@ export default function PetaPelanggan({ refreshKey }: { refreshKey?: number }) {
     <div>
       <div
         style={{
-          margin: "0 auto",
           width: "100%",
-          maxWidth: 720,
           aspectRatio: "799.85 / 352.74",
-          background: "linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)",
+          background: "#f8fafc",
           borderRadius: 14,
-          padding: "1rem",
+          padding: "0.75rem",
           border: "1px solid var(--border)",
+          boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
         }}
       >
         <svg viewBox={`0 0 ${VIEW_W} ${VIEW_H}`} role="img" style={{ width: "100%", height: "100%", display: "block" }}>
           <title>Peta jumlah pelanggan ikut negeri</title>
           {projectedStates.map((s) => {
-            const hasData = s.count > 0;
-            const baseColor = STATE_COLORS[s.slug] ?? "#6b7280";
-            const isSelected = selected?.slug === s.slug;
+            const isActive = activeSlug === s.slug;
+            const isDimmed = activeSlug !== null && !isActive;
+            const fillColor = isActive ? "#1d4ed8" : colorForCount(s.count);
             return (
-              <g
+              <path
                 key={s.slug}
-                style={{ cursor: "pointer", transition: "opacity 0.15s ease" }}
-                onClick={() => setSelected(s)}
-              >
-                {/* shadow */}
-                <path
-                  d={s.d}
-                  fill="#000000"
-                  opacity={0.25}
-                  transform="translate(1.5,1.5)"
-                />
-                {/* state shape */}
-                <path
-                  d={s.d}
-                  fill={baseColor}
-                  opacity={hasData ? 0.9 : 0.3}
-                  stroke={isSelected ? "#fff" : "rgba(255,255,255,0.35)"}
-                  strokeWidth={isSelected ? 1.8 : 0.8}
-                  style={{ transition: "opacity 0.15s ease" }}
-                />
-              </g>
+                d={s.d}
+                fill={fillColor}
+                opacity={isDimmed ? 0.35 : 1}
+                stroke={isActive ? "#fff" : "#fff"}
+                strokeWidth={isActive ? 2 : 0.8}
+                style={{ cursor: "pointer", transition: "opacity 0.15s ease, fill 0.15s ease" }}
+                onMouseEnter={() => setHovered(s.slug)}
+                onMouseLeave={() => setHovered(null)}
+              />
             );
           })}
         </svg>
@@ -227,20 +180,20 @@ export default function PetaPelanggan({ refreshKey }: { refreshKey?: number }) {
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          padding: "0 0.5rem",
+          padding: "0 0.25rem",
         }}
       >
         <div>
           <p style={{ fontSize: 16, color: "var(--text)", margin: 0, fontWeight: 600 }}>
-            {selected ? selected.name : "Klik satu negeri"}
+            {activeState ? activeState.name : "Hover negeri untuk lihat"}
           </p>
           <p style={{ fontSize: 12, color: "var(--muted)", margin: "3px 0 0" }}>
-            {selected ? "Jumlah pelanggan direkod" : `Total: ${totalPelanggan} pelanggan`}
+            {activeState ? "Jumlah pelanggan direkod" : `Total: ${totalPelanggan} pelanggan`}
           </p>
         </div>
         <div style={{ textAlign: "right" }}>
-          <p style={{ fontSize: 26, fontWeight: 600, color: selected ? STATE_COLORS[selected.slug] : "var(--muted)", margin: 0 }}>
-            {selected ? selected.count : "-"}
+          <p style={{ fontSize: 26, fontWeight: 600, color: "var(--accent)", margin: 0 }}>
+            {activeState ? activeState.count : "-"}
           </p>
           <p style={{ fontSize: 11, color: "var(--muted)", margin: "2px 0 0" }}>pelanggan</p>
         </div>
