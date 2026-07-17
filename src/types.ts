@@ -22,6 +22,7 @@ export type Pesanan = {
   tarikh: string;
   jumlah: number;
   catatan: string | null;
+  status: string; // "completed" | "proses" | "cancel"
   created_at: string;
 };
 

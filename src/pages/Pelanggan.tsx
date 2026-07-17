@@ -50,6 +50,7 @@ export default function PelangganPage() {
   const [editOrder, setEditOrder] = useState<PesananLengkap | null>(null);
   const [editOrderTarikh, setEditOrderTarikh] = useState("");
   const [editOrderCatatan, setEditOrderCatatan] = useState("");
+  const [editOrderStatus, setEditOrderStatus] = useState("proses");
   const [editOrderItems, setEditOrderItems] = useState<EditOrderItem[]>([]);
   const [edit, setEdit] = useState<Pelanggan | null>(null);
   const [orderCust, setOrderCust] = useState<Pelanggan | null>(null);
@@ -171,6 +172,7 @@ export default function PelangganPage() {
     setEditOrder(p);
     setEditOrderTarikh(p.tarikh.slice(0, 16));
     setEditOrderCatatan(p.catatan ?? "");
+    setEditOrderStatus(p.status ?? "proses");
     setEditOrderItems(
       p.items.map((it) => ({
         id: it.id,
@@ -206,6 +208,7 @@ export default function PelangganPage() {
         catatan: editOrderCatatan || null,
         jumlah,
         tarikh: new Date(editOrderTarikh).toISOString(),
+        status: editOrderStatus,
       })
       .eq("id", editOrder.id);
 
@@ -311,7 +314,7 @@ export default function PelangganPage() {
     }
   }
 
-  async function insertOrderFor(pelangganId: string) {
+  async function insertOrderFor(pelangganId: string, status: string = "proses") {
     const valid = items.filter((it) => it.nama_produk.trim() !== "");
     if (valid.length === 0) return;
     const jumlahBaru = valid.reduce(
@@ -320,7 +323,7 @@ export default function PelangganPage() {
     );
     const { data: inserted, error } = await supabase
       .from("pesanan")
-      .insert({ pelanggan_id: pelangganId, jumlah: jumlahBaru })
+      .insert({ pelanggan_id: pelangganId, jumlah: jumlahBaru, status })
       .select()
       .single();
     if (error || !inserted) {
@@ -423,6 +426,13 @@ export default function PelangganPage() {
   const lastOrder = custOrders.length > 0 ? custOrders[0] : null; // dah sorted desc
   const repeatCount = custOrders.length;
 
+  // status counts untuk 3 card
+  const statusCounts = {
+    completed: pesananAll.filter((p) => p.status === "completed").length,
+    proses: pesananAll.filter((p) => p.status === "proses").length,
+    cancel: pesananAll.filter((p) => p.status === "cancel").length,
+  };
+
   function totalJualanFor(id: string) {
     return pesananAll.filter((p) => p.pelanggan_id === id).reduce((s, p) => s + Number(p.jumlah), 0);
   }
@@ -516,6 +526,22 @@ export default function PelangganPage() {
           <code>VITE_SUPABASE_PUBLISHABLE_KEY</code>, kemudian restart dev server.
         </div>
       )}
+
+      {/* 3 Card Status */}
+      <div className="cards cards-lg" style={{ marginBottom: 20 }}>
+        <div className="card" style={{ background: "linear-gradient(135deg, #16a34a, #22c55e)", border: "none" }}>
+          <div className="label" style={{ color: "rgba(255,255,255,0.85)" }}>Completed</div>
+          <div className="value" style={{ color: "#fff" }}>{statusCounts.completed}</div>
+        </div>
+        <div className="card" style={{ background: "linear-gradient(135deg, #d97706, #f59e0b)", border: "none" }}>
+          <div className="label" style={{ color: "rgba(255,255,255,0.85)" }}>Proses</div>
+          <div className="value" style={{ color: "#fff" }}>{statusCounts.proses}</div>
+        </div>
+        <div className="card" style={{ background: "linear-gradient(135deg, #dc2626, #ef4444)", border: "none" }}>
+          <div className="label" style={{ color: "rgba(255,255,255,0.85)" }}>Cancel</div>
+          <div className="value" style={{ color: "#fff" }}>{statusCounts.cancel}</div>
+        </div>
+      </div>
 
       <div className="negeri-layout">
         {/* Peta di SEBELAH KIRI */}
@@ -654,16 +680,33 @@ export default function PelangganPage() {
             {custOrders.length === 0 ? (
               <p className="muted">Pelanggan ini belum ada pesanan. Klik "+ Pesanan" untuk rekod.</p>
             ) : (
-              custOrders.map((p) => (
+              custOrders.map((p) => {
+                const st = p.status ?? "proses";
+                const stColor = st === "completed" ? "#16a34a" : st === "cancel" ? "#dc2626" : "#f59e0b";
+                const stLabel = st === "completed" ? "Completed" : st === "cancel" ? "Cancel" : "Proses";
+                return (
                 <div key={p.id} style={{ marginBottom: 16, borderBottom: "1px solid var(--border)", paddingBottom: 12 }}>
-                  <div className="muted">
-                    {new Date(p.tarikh).toLocaleString("ms-MY")} · {fmt(Number(p.jumlah))}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 6 }}>
+                    <div className="muted" style={{ fontSize: 13 }}>
+                      {new Date(p.tarikh).toLocaleString("ms-MY")} · <strong style={{ color: "var(--text)" }}>{fmt(Number(p.jumlah))}</strong>
+                    </div>
+                    <span style={{
+                      fontSize: 11, fontWeight: 700, color: "#fff", background: stColor,
+                      padding: "3px 10px", borderRadius: 999,
+                    }}>
+                      {stLabel}
+                    </span>
                   </div>
+                  {p.catatan && (
+                    <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>📝 {p.catatan}</div>
+                  )}
                   <table className="table" style={{ marginTop: 8 }}>
                     <thead>
                       <tr>
                         <th>Produk</th>
                         <th>Qty</th>
+                        <th>Harga</th>
+                        <th>Subtotal</th>
                         <th>Untung</th>
                       </tr>
                     </thead>
@@ -672,6 +715,8 @@ export default function PelangganPage() {
                         <tr key={it.id}>
                           <td data-label="Produk">{it.nama_produk}</td>
                           <td data-label="Qty">{it.kuantiti}</td>
+                          <td data-label="Harga">{fmt(Number(it.harga_satuan))}</td>
+                          <td data-label="Subtotal">{fmt(Number(it.subtotal))}</td>
                           <td data-label="Untung" style={{ color: "var(--green)" }}>+{fmt(Number(it.untung))}</td>
                         </tr>
                       ))}
@@ -682,7 +727,8 @@ export default function PelangganPage() {
                     <button className="btn danger" onClick={() => deleteOrder(p.id)}>Padam</button>
                   </div>
                 </div>
-              ))
+                );
+              })
             )}
             <div className="modal-actions">
               <button className="btn secondary" onClick={() => setShowView(false)}>
@@ -784,6 +830,17 @@ export default function PelangganPage() {
                 value={editOrderCatatan}
                 onChange={(e) => setEditOrderCatatan(e.target.value)}
               />
+            </div>
+            <div className="field">
+              <label>Status Order</label>
+              <select
+                value={editOrderStatus}
+                onChange={(e) => setEditOrderStatus(e.target.value)}
+              >
+                <option value="proses">Proses</option>
+                <option value="completed">Completed</option>
+                <option value="cancel">Cancel</option>
+              </select>
             </div>
             <label className="muted" style={{ fontSize: 13 }}>Item</label>
             {editOrderItems.map((it, idx) => (

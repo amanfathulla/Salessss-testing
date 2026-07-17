@@ -46,11 +46,15 @@ const SLUG_TO_NAME: Record<string, string> = {
   "kuala-lumpur": "Kuala Lumpur", putrajaya: "Putrajaya", labuan: "Labuan",
 };
 
-// 3 warna sahaja — clean
-function colorForCount(count: number): string {
-  if (count === 0) return "#e2e8f0";   // gray — tiada data
-  if (count <= 2) return "#93c5fd";   // light blue — sikit
-  return "#3b82f6";                    // blue — ramai
+// 5 warna mengikut bilangan pelanggan (gradient panas)
+function colorForCount(count: number, max: number): string {
+  if (count === 0) return "#1e293b";       // gelap — tiada data
+  const ratio = count / max;
+  if (ratio <= 0.2) return "#1e3a5f";       // biru gelap — sikit
+  if (ratio <= 0.4) return "#2563eb";       // biru — sederhana
+  if (ratio <= 0.6) return "#0891b2";       // cyan — ramai
+  if (ratio <= 0.8) return "#f59e0b";       // oren — lebih ramai
+  return "#dc2626";                          // merah — paling ramai
 }
 
 interface ProjectedState {
@@ -117,8 +121,8 @@ export default function PetaPelanggan({
   );
 
   const totalPelanggan = projectedStates.reduce((s, st) => s + st.count, 0);
+  const maxCount = Math.max(1, ...projectedStates.map((s) => s.count));
 
-  // active = hovered on peta OR hovered from 5 Teratas
   const activeSlug = hovered ?? highlightSlug ?? null;
   const activeState = activeSlug ? projectedStates.find((s) => s.slug === activeSlug) : null;
 
@@ -144,11 +148,11 @@ export default function PetaPelanggan({
         style={{
           width: "100%",
           aspectRatio: "799.85 / 352.74",
-          background: "#f8fafc",
+          background: "#0f172a",
           borderRadius: 14,
-          padding: "0.75rem",
-          border: "1px solid var(--border)",
-          boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
+          padding: "0.5rem",
+          border: "1px solid #1e293b",
+          boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
         }}
       >
         <svg viewBox={`0 0 ${VIEW_W} ${VIEW_H}`} role="img" style={{ width: "100%", height: "100%", display: "block" }}>
@@ -156,27 +160,54 @@ export default function PetaPelanggan({
           {projectedStates.map((s) => {
             const isActive = activeSlug === s.slug;
             const isDimmed = activeSlug !== null && !isActive;
-            const fillColor = isActive ? "#1d4ed8" : colorForCount(s.count);
+            const fillColor = isActive ? "#fbbf24" : colorForCount(s.count, maxCount);
             return (
-              <path
-                key={s.slug}
-                d={s.d}
-                fill={fillColor}
-                opacity={isDimmed ? 0.35 : 1}
-                stroke={isActive ? "#fff" : "#fff"}
-                strokeWidth={isActive ? 2 : 0.8}
-                style={{ cursor: "pointer", transition: "opacity 0.15s ease, fill 0.15s ease" }}
-                onMouseEnter={() => setHovered(s.slug)}
-                onMouseLeave={() => setHovered(null)}
-              />
+              <g key={s.slug}>
+                {/* shadow di belakang untuk depth */}
+                <path
+                  d={s.d}
+                  fill="#000000"
+                  opacity={0.4}
+                  transform="translate(2,2)"
+                />
+                {/* state shape */}
+                <path
+                  d={s.d}
+                  fill={fillColor}
+                  opacity={isDimmed ? 0.3 : 1}
+                  stroke={isActive ? "#fff" : "rgba(255,255,255,0.4)"}
+                  strokeWidth={isActive ? 2 : 1}
+                  style={{ cursor: "pointer", transition: "opacity 0.15s ease" }}
+                  onMouseEnter={() => setHovered(s.slug)}
+                  onMouseLeave={() => setHovered(null)}
+                />
+              </g>
             );
           })}
         </svg>
       </div>
 
+      {/* Legend bar — 5 warna */}
+      <div style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+        marginTop: "0.6rem",
+        padding: "0 0.25rem",
+        flexWrap: "wrap",
+      }}>
+        <span style={{ fontSize: 11, color: "var(--muted)" }}>Sikit</span>
+        <div style={{ display: "flex", gap: 2, flex: 1, maxWidth: 200 }}>
+          {["#1e293b", "#1e3a5f", "#2563eb", "#0891b2", "#f59e0b", "#dc2626"].map((c) => (
+            <div key={c} style={{ flex: 1, height: 10, background: c, borderRadius: 2 }} />
+          ))}
+        </div>
+        <span style={{ fontSize: 11, color: "var(--muted)" }}>Ramai</span>
+      </div>
+
       <div
         style={{
-          marginTop: "0.75rem",
+          marginTop: "0.6rem",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
